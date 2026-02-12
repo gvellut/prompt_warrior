@@ -1,0 +1,12 @@
+- when generating the line with label in battle.md : instead of [](B_More_details.md) More details (ie empty link text content) do [More details](B_More_details.md) ie the label is the text of the link. When reading (like for below), if the text between [] is empty : take the content of the line minus the link and bullet char , if not empty : take the text between []. so with previous example : would be More details in both cases.
+    - fill free to create an util function in a file outside __main__.py
+
+- add a commit command : it takes the currently active task (deepest), and copies the command "gaa & gcam '<active task label>'" to the copy buffer. (the task label is the text for the task in the battle.md : ie inside the link text around [])
+    - there are 2 options : 
+        - --commit-command / -c (by default gcam)
+        - --add-all-command / -a : by default gaa
+        - add the defaults as constants
+        - if any of them is empty (set to "" in env var for ex) : do not add the &
+        - errors if both are empty
+        - print the copied string to output
+    - update the documentation

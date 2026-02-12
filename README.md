@@ -22,6 +22,7 @@ Create a task markdown file and add its line to `battle.md`.
 - Positional `LABEL_WORDS...` is required
 - Positional text is always the display label in `battle.md`
 - `--filename` only change the filename stem
+- New task lines are written as `BULLET [label](file.md)`
 
 Options:
 - `-l, --filename TEXT`: safe-ASCII filename stem override
@@ -49,6 +50,21 @@ Rules:
 - Only the currently deepest active (`*`) task is considered
 - Errors if no active task exists
 - Clipboard integration is implemented for macOS (`pbcopy`)
+
+### `prompt-warrior commit`
+Copy a shell command for the deepest active task label to the clipboard.
+
+Defaults:
+- Copies `gaa & gcam '<active label>'`
+
+Options:
+- `-c, --commit-command TEXT`: commit command prefix (default: `gcam`)
+- `-a, --add-all-command TEXT`: add-all command prefix (default: `gaa`)
+
+Rules:
+- If one command is empty, only the other command is copied (no `&`)
+- If both are empty, the command errors
+- The copied command string is also printed to output
 
 ### `prompt-warrior done`
 Close the deepest active task.
@@ -102,6 +118,8 @@ All options can be set from env vars:
 | `add --corr` | `PWAR_CORR` |
 | `add --agent` | `PWAR_AGENT` |
 | `done --recursive` | `PWAR_RECURSIVE` |
+| `commit --commit-command` | `PWAR_COMMIT_COMMAND` |
+| `commit --add-all-command` | `PWAR_ADD_ALL_COMMAND` |
 | `delete --keep-children` | `PWAR_KEEP_CHILDREN` |
 
 ## 30-second workflow
@@ -156,7 +174,12 @@ compdef pwr=prompt-warrior
 ## Battle file behavior and validation
 
 - Non-task lines are preserved as-is
-- Task lines are parsed only in `BULLET [](path) label` format
+- Task lines support:
+  - `BULLET [label](path)` (preferred)
+  - `BULLET [](path) label` (legacy)
+- Label resolution rule:
+  - if link text (`[ ... ]`) is non-empty, use it
+  - otherwise use trailing text after `](path)`
 - Tabs/spaces are tolerated
 - Fatal parse error only when direct children of the same parent use inconsistent indentation depths
 - Warning is emitted if active (`*`) invariants are broken

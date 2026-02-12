@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import builtins
+from collections.abc import Iterator
+from enum import Enum, auto
 import logging
+from pathlib import Path
 import platform
 import re
+import shlex
 import string
 import subprocess
+from typing import Callable, Protocol
 import unicodedata
-from enum import Enum, auto
-from pathlib import Path
-from typing import Callable, Iterator, Protocol
 
-import click
 from attrs import define, field
+import click
 from click.shell_completion import CompletionItem
 from rich.console import Console
 from rich.theme import Theme
@@ -20,6 +22,8 @@ from rich.theme import Theme
 DEFAULT_PROMPTS_DIR = ".prompts"
 WORK_FILENAME = "battle.md"
 DEFAULT_INIT_TASK_LABEL = "Initialization"
+DEFAULT_COMMIT_COMMAND = "gcam"
+DEFAULT_ADD_ALL_COMMAND = "gaa"
 MARKDOWN_EXTENSION = ".md"
 INDENT_WIDTH = 4
 INDENT_UNIT = " " * INDENT_WIDTH
@@ -38,6 +42,8 @@ PWAR_CORR = f"{ENVVAR_PREFIX}_CORR"
 PWAR_AGENT = f"{ENVVAR_PREFIX}_AGENT"
 PWAR_RECURSIVE = f"{ENVVAR_PREFIX}_RECURSIVE"
 PWAR_KEEP_CHILDREN = f"{ENVVAR_PREFIX}_KEEP_CHILDREN"
+PWAR_COMMIT_COMMAND = f"{ENVVAR_PREFIX}_COMMIT_COMMAND"
+PWAR_ADD_ALL_COMMAND = f"{ENVVAR_PREFIX}_ADD_ALL_COMMAND"
 
 RICH_THEME = Theme(
     {
@@ -50,7 +56,7 @@ RICH_THEME = Theme(
 )
 
 TASK_LINE_RE = re.compile(
-    r"^(?P<indent>[ \t]*)(?P<bullet>[-*?!~])(?P<ws1>\s+)\[\]\((?P<link>[^)]+)\)(?P<ws2>\s+)(?P<label>[^\r\n]*)(?P<newline>\r?\n?)$"
+    r"^(?P<indent>[ \t]*)(?P<bullet>[-*?!~])(?P<ws1>\s+)\[(?P<link_text>[^\]]*)\]\((?P<link>[^)]+)\)(?P<ws2>\s*)(?P<trailing_label>[^\r\n]*)(?P<newline>\r?\n?)$"
 )
 
 
@@ -137,7 +143,6 @@ class TaskLine:
     bullet: BulletType
     ws_after_bullet: str
     link_path: str
-    ws_after_link: str
     label: str
     newline: str
     raw_line: str
@@ -235,6 +240,13 @@ def indent_width(indent_raw: str) -> int:
     return len(indent_raw.expandtabs(INDENT_WIDTH))
 
 
+def resolve_task_label(link_text: str, trailing_label: str) -> str:
+    normalized_link_text = link_text.strip()
+    if normalized_link_text:
+        return normalized_link_text
+    return trailing_label.strip()
+
+
 def parse_work_lines(path: Path, lines: list[str]) -> WorkDocument:
     document = WorkDocument(
         path=path, lines=list(lines), tasks=[], newline=detect_newline(lines)
@@ -248,6 +260,10 @@ def parse_work_lines(path: Path, lines: list[str]) -> WorkDocument:
         bullet_char = match.group("bullet")
         bullet = CHAR_TO_BULLET[bullet_char]
         indent_raw = match.group("indent")
+        label = resolve_task_label(
+            link_text=match.group("link_text"),
+            trailing_label=match.group("trailing_label"),
+        )
         task = TaskLine(
             line_index=index,
             indent_raw=indent_raw,
@@ -255,8 +271,7 @@ def parse_work_lines(path: Path, lines: list[str]) -> WorkDocument:
             bullet=bullet,
             ws_after_bullet=match.group("ws1"),
             link_path=match.group("link"),
-            ws_after_link=match.group("ws2"),
-            label=match.group("label"),
+            label=label,
             newline=match.group("newline"),
             raw_line=line,
         )
@@ -428,8 +443,8 @@ def render_task_line(
     rendered_bullet = BULLET_TO_CHAR[bullet or task.bullet]
     rendered_indent = task.indent_raw if indent_raw is None else indent_raw
     return (
-        f"{rendered_indent}{rendered_bullet}{task.ws_after_bullet}[]({task.link_path})"
-        f"{task.ws_after_link}{task.label}{task.newline}"
+        f"{rendered_indent}{rendered_bullet}{task.ws_after_bullet}"
+        f"[{task.label}]({task.link_path}){task.newline}"
     )
 
 
@@ -762,6 +777,26 @@ def copy_task_content(app_ctx: AppContext, task: TaskLine) -> Path:
     return task_path
 
 
+def build_commit_command(
+    task_label: str, add_all_command: str, commit_command: str
+) -> str:
+    normalized_add_all = add_all_command.strip()
+    normalized_commit = commit_command.strip()
+
+    if not normalized_add_all and not normalized_commit:
+        raise PromptWarriorError(
+            "Both --add-all-command and --commit-command are empty."
+        )
+
+    command_parts: list[str] = []
+    if normalized_add_all:
+        command_parts.append(normalized_add_all)
+    if normalized_commit:
+        command_parts.append(f"{normalized_commit} {shlex.quote(task_label)}")
+
+    return " && ".join(command_parts)
+
+
 def delete_task_block(document: WorkDocument, task_index: int) -> list[str]:
     lines = list(document.lines)
     start = document.tasks[task_index].line_index
@@ -943,7 +978,7 @@ def init(app_ctx: AppContext, no_init_task: bool, init_task_label: str) -> None:
 
     (prompts_dir / file_name).write_text("", encoding="utf-8")
     work_path.write_text(
-        f"- []({file_name}) {label}{FALLBACK_NEWLINE}", encoding="utf-8"
+        f"- [{label}]({file_name}){FALLBACK_NEWLINE}", encoding="utf-8"
     )
 
     app_ctx.console.print(f"Initialized workspace at {prompts_dir}", style="success")
@@ -1077,7 +1112,9 @@ def add(
     task_path = app_ctx.prompts_dir / file_name
     task_path.write_text("", encoding="utf-8")
 
-    new_line = f"{indent_raw}{BULLET_TO_CHAR[bullet]} []({file_name}) {label}{document.newline}"
+    new_line = (
+        f"{indent_raw}{BULLET_TO_CHAR[bullet]} [{label}]({file_name}){document.newline}"
+    )
     lines = list(document.lines)
     ensure_insert_separation(lines, insert_at, document.newline)
     lines.insert(insert_at, new_line)
@@ -1230,6 +1267,49 @@ def read(app_ctx: AppContext) -> None:
     app_ctx.console.print(
         f"Copied task content from {task_path.name}", style="highlight"
     )
+
+
+@cli.command(
+    cls=RichErrorCommand,
+    help="Copy a commit command based on the deepest active task label.",
+)
+@click.option(
+    "-c",
+    "--commit-command",
+    default=DEFAULT_COMMIT_COMMAND,
+    show_default=True,
+    envvar=PWAR_COMMIT_COMMAND,
+    help="Command prefix used for the commit step.",
+)
+@click.option(
+    "-a",
+    "--add-all-command",
+    default=DEFAULT_ADD_ALL_COMMAND,
+    show_default=True,
+    envvar=PWAR_ADD_ALL_COMMAND,
+    help="Command prefix used for the add-all step.",
+)
+@pass_app_context
+def commit(app_ctx: AppContext, commit_command: str, add_all_command: str) -> None:
+    app_ctx.logger.debug(
+        "Running commit with commit_command=%s add_all_command=%s",
+        commit_command,
+        add_all_command,
+    )
+    _, document = load_document_for_command(app_ctx)
+
+    current_task_index = deepest_active_task_index(document)
+    if current_task_index is None:
+        raise PromptWarriorError("No active task found to commit.")
+
+    task = document.tasks[current_task_index]
+    command_text = build_commit_command(
+        task_label=task.label,
+        add_all_command=add_all_command,
+        commit_command=commit_command,
+    )
+    app_ctx.clipboard.copy(command_text)
+    app_ctx.console.print(command_text, style="highlight")
 
 
 @cli.command(
