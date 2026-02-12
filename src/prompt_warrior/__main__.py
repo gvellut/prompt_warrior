@@ -132,7 +132,8 @@ class UnsupportedClipboardProvider:
 
     def copy(self, text: str) -> None:
         raise PromptWarriorError(
-            f"Clipboard copy is only implemented for macOS. Detected system: {self.system_name}."
+            "Clipboard copy is only implemented for macOS. "
+            f"Detected system: {self.system_name}."
         )
 
 

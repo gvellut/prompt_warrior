@@ -2,6 +2,8 @@
 
 `prompt-warrior` is a CLI for managing prompt task files and a hierarchical task table-of-contents with Markdown.
 
+Currently, the only supported system is macos (for copying to the clipboard using `pbcopy`).
+
 ## Commands
 
 ### `prompt-warrior init`
