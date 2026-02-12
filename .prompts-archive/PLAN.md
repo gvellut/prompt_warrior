@@ -5,7 +5,7 @@
 This plan implements a full task-management CLI in `src/prompt_warrior/__main__.py`, updates `README.md` with command docs and the requested 30-second workflow, and keeps assumptions explicit.
 
 Primary goals:
-1. Parse and update user-editable `work.md` while preserving formatting where possible.
+1. Parse and update user-editable `battle.md` while preserving formatting where possible.
 2. Keep command behavior deterministic and explicit.
 3. Provide explicit `PWAR_` env vars for all options.
 4. Keep system-specific clipboard behavior macOS-only behind an abstraction.
@@ -22,6 +22,7 @@ Primary goals:
   - `add`
   - `done`
   - `next`
+  - `read`
   - `delete`
 - Custom `click.Command` subclass for all commands (not group): catches errors, prints message in red, prints traceback in debug mode.
 - Rich console with themed styles:
@@ -44,7 +45,7 @@ Enums (`auto()`, uppercase names):
 
 ### Parsing and validation
 
-- `work.md` read with `splitlines(keepends=True)`.
+- `battle.md` read with `splitlines(keepends=True)`.
 - Task lines parsed using strict `BULLET [](path) label` regex.
 - Non-task lines are preserved untouched.
 - Tree built from indentation depth (`expandtabs(4)`) for structure.
@@ -58,13 +59,13 @@ Enums (`auto()`, uppercase names):
 
 #### `init`
 - Fails if prompts dir already exists.
-- Creates prompts dir + `work.md`.
+- Creates prompts dir + `battle.md`.
 - Default creates first task line and markdown file.
-- `--no-init` leaves `work.md` empty.
+- `--no-init` leaves `battle.md` empty.
 
 #### `add LABEL_WORDS...`
 - Positional label is required.
-- Positional label is always the display label in `work.md`.
+- Positional label is always the display label in `battle.md`.
 - `--label/--raw-label` only change filename seed.
 - Supports:
   - top-level insertion,
@@ -92,13 +93,17 @@ Enums (`auto()`, uppercase names):
 - Activates first `-` or `?`.
 - Copies task file content to clipboard.
 
+#### `read`
+- Finds the deepest active task (`*`).
+- Copies that task file content to clipboard without changing status.
+
 #### `delete TASK_REF`
 - Reference resolution order:
   1. full stem,
   2. prefix,
   3. planned-task index.
 - Confirmation when task is active or has children.
-- Default delete removes subtree from `work.md` and deletes all linked files in subtree.
+- Default delete removes subtree from `battle.md` and deletes all linked files in subtree.
 - `--keep-children` removes parent only, promotes direct children to parent level, keeps child files.
 
 ### Autocompletion
@@ -120,7 +125,7 @@ Enums (`auto()`, uppercase names):
 
 These were inferred where the written spec was ambiguous:
 
-1. `status` refers to bullet state in `work.md`, not a separate file.
+1. `status` refers to bullet state in `battle.md`, not a separate file.
 2. Link paths written by commands are local filenames in prompts directory.
 3. If active invariants are broken and multiple deepest active tasks exist, first by file order is used, with warning.
 4. For `delete --keep-children`, only direct children are promoted; their subtrees remain under them.

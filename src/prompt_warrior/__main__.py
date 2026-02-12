@@ -18,7 +18,7 @@ from rich.console import Console
 from rich.theme import Theme
 
 DEFAULT_PROMPTS_DIR = ".prompts"
-WORK_FILENAME = "work.md"
+WORK_FILENAME = "battle.md"
 DEFAULT_INIT_TASK_LABEL = "Initialization"
 MARKDOWN_EXTENSION = ".md"
 INDENT_WIDTH = 4
@@ -91,7 +91,7 @@ class PromptWarriorError(Exception):
 
 
 class ParseIssue(PromptWarriorError):
-    """Raised when the work file has a structural issue."""
+    """Raised when the battle file has a structural issue."""
 
 
 class ClipboardProvider(Protocol):
@@ -271,7 +271,7 @@ def parse_work_lines(path: Path, lines: list[str]) -> WorkDocument:
 
 def parse_work_document(path: Path) -> WorkDocument:
     if not path.exists():
-        raise PromptWarriorError(f"Missing work file: {path}")
+        raise PromptWarriorError(f"Missing battle file: {path}")
 
     content = path.read_text(encoding="utf-8")
     return parse_work_lines(path=path, lines=content.splitlines(keepends=True))
@@ -735,7 +735,7 @@ def require_workspace(app_ctx: AppContext) -> Path:
     if not prompts_dir.is_dir():
         raise PromptWarriorError(f"Path '{prompts_dir}' exists but is not a directory.")
     if not work_path.exists():
-        raise PromptWarriorError(f"Missing work file '{work_path}'.")
+        raise PromptWarriorError(f"Missing battle file '{work_path}'.")
 
     return work_path
 
@@ -750,6 +750,16 @@ def load_document_for_command(app_ctx: AppContext) -> tuple[Path, WorkDocument]:
     )
     emit_warnings(app_ctx, document)
     return work_path, document
+
+
+def copy_task_content(app_ctx: AppContext, task: TaskLine) -> Path:
+    task_path = resolve_task_path(app_ctx, task.link_path)
+    if not task_path.exists():
+        raise PromptWarriorError(f"Task file does not exist: {task_path}")
+
+    task_content = task_path.read_text(encoding="utf-8")
+    app_ctx.clipboard.copy(task_content)
+    return task_path
 
 
 def delete_task_block(document: WorkDocument, task_index: int) -> list[str]:
@@ -855,7 +865,7 @@ def select_clipboard_provider() -> ClipboardProvider:
     default=Path(DEFAULT_PROMPTS_DIR),
     show_default=True,
     envvar=PWAR_PROMPTS_DIR,
-    help="Directory containing prompts and work.md.",
+    help="Directory containing prompts and battle.md.",
 )
 @click.pass_context
 def cli(ctx: click.Context, debug: bool, prompts_dir: Path) -> None:
@@ -893,7 +903,7 @@ def cli(ctx: click.Context, debug: bool, prompts_dir: Path) -> None:
     "--no-init-task",
     is_flag=True,
     envvar=PWAR_NO_INIT_TASK,
-    help="Create prompts directory and work.md without creating an initial task.",
+    help="Create prompts directory and battle.md without creating an initial task.",
 )
 @click.option(
     "--init-task-label",
@@ -940,7 +950,7 @@ def init(app_ctx: AppContext, no_init_task: bool, init_task_label: str) -> None:
     app_ctx.console.print(f"Created initial task: {label}", style="highlight")
 
 
-@cli.command(cls=RichErrorCommand, help="Create a new task and add it to work.md.")
+@cli.command(cls=RichErrorCommand, help="Create a new task and add it to battle.md.")
 @argument_label_words
 @click.option(
     "-l",
@@ -1190,18 +1200,33 @@ def next_task(app_ctx: AppContext) -> None:
         raise PromptWarriorError("No remaining '-' or '?' top-level task to activate.")
 
     task = document.tasks[next_candidate]
-    task_path = resolve_task_path(app_ctx, task.link_path)
-    if not task_path.exists():
-        raise PromptWarriorError(f"Task file does not exist: {task_path}")
-
-    task_content = task_path.read_text(encoding="utf-8")
-    app_ctx.clipboard.copy(task_content)
+    task_path = copy_task_content(app_ctx, task)
 
     lines = list(document.lines)
     lines[task.line_index] = render_task_line(task, bullet=BulletType.ACTIVE)
     write_work_lines(work_path, lines)
 
     app_ctx.console.print(f"Activated task: {task.label}", style="success")
+    app_ctx.console.print(
+        f"Copied task content from {task_path.name}", style="highlight"
+    )
+
+
+@cli.command(
+    cls=RichErrorCommand,
+    help="Copy the deepest active task markdown content to the clipboard.",
+)
+@pass_app_context
+def read(app_ctx: AppContext) -> None:
+    app_ctx.logger.debug("Running read")
+    _, document = load_document_for_command(app_ctx)
+
+    current_task_index = deepest_active_task_index(document)
+    if current_task_index is None:
+        raise PromptWarriorError("No active task found to read.")
+
+    task = document.tasks[current_task_index]
+    task_path = copy_task_content(app_ctx, task)
     app_ctx.console.print(
         f"Copied task content from {task_path.name}", style="highlight"
     )

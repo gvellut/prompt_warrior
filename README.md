@@ -1,6 +1,6 @@
 # prompt_warrior
 
-`prompt-warrior` is a Click-based CLI for managing prompt task files and a hierarchical task table-of-contents in `.prompts/work.md`.
+`prompt-warrior` is a Click-based CLI for managing prompt task files and a hierarchical task table-of-contents in `.prompts/battle.md`.
 
 ## Commands
 
@@ -8,19 +8,19 @@
 Initialize a prompts workspace.
 
 - Creates the prompts directory (default: `.prompts`)
-- Creates `.prompts/work.md`
+- Creates `.prompts/battle.md`
 - By default creates one initial task and markdown file
 - Fails if the prompts directory already exists
 
 Options:
-- `--no-init-task`: create directory + `work.md` only
+- `--no-init-task`: create directory + `battle.md` only
 - `--init-task-label TEXT`: label and filename seed for the initial task
 
 ### `prompt-warrior add LABEL_WORDS...`
-Create a task markdown file and add its line to `work.md`.
+Create a task markdown file and add its line to `battle.md`.
 
 - Positional `LABEL_WORDS...` is required
-- Positional text is always the display label in `work.md`
+- Positional text is always the display label in `battle.md`
 - `--filename` only change the filename stem
 
 Options:
@@ -42,6 +42,14 @@ Notes:
 - Errors if current scope already has an active `*`
 - Clipboard integration is implemented for macOS (`pbcopy`)
 
+### `prompt-warrior read`
+Copy the deepest active task content to the clipboard without changing task status.
+
+Rules:
+- Only the currently deepest active (`*`) task is considered
+- Errors if no active task exists
+- Clipboard integration is implemented for macOS (`pbcopy`)
+
 ### `prompt-warrior done`
 Close the deepest active task.
 
@@ -55,7 +63,7 @@ Options:
 Delete a task by reference.
 
 Default behavior:
-- Removes the task line and full subtree from `work.md`
+- Removes the task line and full subtree from `battle.md`
 - Deletes markdown files for task + descendants
 
 Options:
@@ -145,7 +153,7 @@ eval "$(_PROMPT_WARRIOR_COMPLETE=zsh_source pwr)"
 compdef pwr=prompt-warrior
 ```
 
-## Work file behavior and validation
+## Battle file behavior and validation
 
 - Non-task lines are preserved as-is
 - Task lines are parsed only in `BULLET [](path) label` format

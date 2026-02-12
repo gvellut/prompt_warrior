@@ -1,0 +1,2 @@
+- Rename the work.md that is generated at init (and read after that) to : battle.md. Also update the documentation
+- Add a read command : it only considers the currently active task (most depth) and copies it to the macos copy buffer (same as the Copied task content of when next command is called)
