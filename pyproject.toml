@@ -5,11 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "Guilhem Vellut", email = "guilhem.vellut@gmail.com" }]
 requires-python = ">=3.14"
-dependencies = [
-    "attrs>=25.4.0",
-    "click>=8.3.1",
-    "rich>=14.3.2",
-]
+dependencies = ["attrs>=25.4.0", "click>=8.3.1", "rich>=14.3.2"]
 
 [project.scripts]
 prompt-warrior = "prompt_warrior.__main__:cli"
@@ -19,6 +15,4 @@ requires = ["uv_build>=0.10.0,<0.11.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = [
-    "coloredlogs>=15.0.1",
-]
+dev = ["coloredlogs>=15.0.1"]

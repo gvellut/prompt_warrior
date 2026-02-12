@@ -133,6 +133,18 @@ eval "$(_PROMPT_WARRIOR_COMPLETE=zsh_source prompt-warrior)"
 
 Persist in `~/.zshrc`.
 
+#### uv project
+
+Set it up as follows to get auto-completion without installing `prompt-warrior`. Change the actual path to the cloned directory. 
+
+```sh
+pwr() {
+  uv run --project /Users/guilhem/Documents/projects/github/prompt_warrior prompt-warrior "$@"
+}
+eval "$(_PROMPT_WARRIOR_COMPLETE=zsh_source pwr)"
+compdef pwr=prompt-warrior
+```
+
 ## Work file behavior and validation
 
 - Non-task lines are preserved as-is
