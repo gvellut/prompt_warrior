@@ -20,7 +20,7 @@ from rich.console import Console
 from rich.theme import Theme
 
 DEFAULT_PROMPTS_DIR = ".prompts"
-WORK_FILENAME = "battle.md"
+WORK_FILENAME = "__battle.md"
 DEFAULT_INIT_TASK_LABEL = "Initialization"
 DEFAULT_COMMIT_COMMAND = "gcam"
 DEFAULT_ADD_ALL_COMMAND = "gaa"
@@ -90,6 +90,12 @@ BULLET_TO_CHAR = {
 }
 CHAR_TO_BULLET = {value: key for key, value in BULLET_TO_CHAR.items()}
 ACTIONABLE_BULLETS = {BulletType.PLANNED, BulletType.CORRECTION}
+# the types of bullets that can serve as parents to a subtask
+SUBTASK_PARENT_BULLETS = {
+    BulletType.PLANNED,
+    BulletType.ACTIVE,
+    BulletType.CORRECTION,
+}
 
 
 class PromptWarriorError(Exception):
@@ -502,6 +508,33 @@ def shell_complete_task_reference(
     return [CompletionItem(stem) for stem in stems if stem.startswith(incomplete)]
 
 
+def shell_complete_subtask_reference(
+    ctx: click.Context,
+    param: click.Parameter,
+    incomplete: str,
+) -> list[CompletionItem]:
+    del param
+
+    prompts_dir = resolve_prompts_dir_from_ctx(ctx)
+    work_path = prompts_dir / WORK_FILENAME
+    if not work_path.exists():
+        return []
+
+    try:
+        document = parse_work_document(work_path)
+    except PromptWarriorError:
+        return []
+
+    stems = sorted(
+        {
+            task.stem
+            for task in document.tasks
+            if task.stem and task.bullet in SUBTASK_PARENT_BULLETS
+        }
+    )
+    return [CompletionItem(stem) for stem in stems if stem.startswith(incomplete)]
+
+
 def argument_label_words(function: Callable[..., object]) -> Callable[..., object]:
     return click.argument("label_words", nargs=-1, metavar="LABEL_WORDS...")(function)
 
@@ -628,7 +661,8 @@ def resolve_reference(
         )
     if len(stem_matches) > 1:
         raise PromptWarriorError(
-            f"Reference '{reference}' is ambiguous by stem. Matches: {format_match_list(document, stem_matches)}"
+            f"Reference '{reference}' is ambiguous by stem. "
+            f"Matches: {format_match_list(document, stem_matches)}"
         )
 
     prefix_matches = [
@@ -643,7 +677,8 @@ def resolve_reference(
         )
     if len(prefix_matches) > 1:
         raise PromptWarriorError(
-            f"Reference '{reference}' is ambiguous by prefix. Matches: {format_match_list(document, prefix_matches)}"
+            f"Reference '{reference}' is ambiguous by prefix. "
+            f"Matches: {format_match_list(document, prefix_matches)}"
         )
 
     if reference.isdigit():
@@ -662,11 +697,13 @@ def resolve_reference(
                 "No planned ('-') tasks exist, so index references are unavailable."
             )
         raise PromptWarriorError(
-            f"Planned-task index {index_value} is out of range. Available range: 0 to {len(planned_indices) - 1}."
+            f"Planned-task index {index_value} is out of range. "
+            f"Available range: 0 to {len(planned_indices) - 1}."
         )
 
     raise PromptWarriorError(
-        f"Could not resolve task reference '{reference}'. Use a full stem, prefix, or planned-task index."
+        f"Could not resolve task reference '{reference}'. "
+        f"Use a full stem, prefix, or planned-task index."
     )
 
 
@@ -745,7 +782,8 @@ def require_workspace(app_ctx: AppContext) -> Path:
 
     if not prompts_dir.exists():
         raise PromptWarriorError(
-            f"Prompts directory '{prompts_dir}' does not exist. Run `prompt-warrior init` first."
+            f"Prompts directory '{prompts_dir}' does not exist. "
+            "Run `prompt-warrior init` first."
         )
     if not prompts_dir.is_dir():
         raise PromptWarriorError(f"Path '{prompts_dir}' exists but is not a directory.")
@@ -1007,7 +1045,7 @@ def init(app_ctx: AppContext, no_init_task: bool, init_task_label: str) -> None:
     "sub_reference",
     metavar="TASK_REF",
     envvar=PWAR_SUB,
-    shell_complete=shell_complete_task_reference,
+    shell_complete=shell_complete_subtask_reference,
     help="Create as planned subtask under TASK_REF.",
 )
 @click.option(
@@ -1077,6 +1115,13 @@ def add(
     if sub_reference is not None:
         resolution = resolve_reference(document, sub_reference)
         parent_task_index = resolution.task_index
+        parent_task = document.tasks[parent_task_index]
+        if parent_task.bullet not in SUBTASK_PARENT_BULLETS:
+            bullet_char = BULLET_TO_CHAR[parent_task.bullet]
+            raise PromptWarriorError(
+                f"Task '{parent_task.label}' on line {parent_task.line_number} is inert ('{bullet_char}'). "
+                "`--sub` only allows '-', '*', or '?' tasks."
+            )
         mode = AddMode.SUBTASK
     elif corr:
         parent_task_index = deepest_active_task_index(document)

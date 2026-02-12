@@ -1,0 +1,2 @@
+- when --sub is used for the add command : restrict to the currently open or active tasks ie '-' or '*' or '?' bullets. Do not consider the other ones (like closed '!' or agent '~'), considered inert
+- process in the autocomplete +  when  running the command : make it an error if the --sub task is inert

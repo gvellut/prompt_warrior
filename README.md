@@ -1,6 +1,6 @@
 # prompt_warrior
 
-`prompt-warrior` is a Click-based CLI for managing prompt task files and a hierarchical task table-of-contents in `.prompts/battle.md`.
+`prompt-warrior` is a CLI for managing prompt task files and a hierarchical task table-of-contents with Markdown.
 
 ## Commands
 
@@ -11,6 +11,7 @@ Initialize a prompts workspace.
 - Creates `.prompts/battle.md`
 - By default creates one initial task and markdown file
 - Fails if the prompts directory already exists
+- In an IDE like VSCode, the link to the task Markdown file can be clicked on to see the content
 
 Options:
 - `--no-init-task`: create directory + `battle.md` only
@@ -28,6 +29,7 @@ Options:
 - `-l, --filename TEXT`: safe-ASCII filename stem override
 - `-t, --top`: add at top of top-level list
 - `-s, --sub TASK_REF`: add as planned child (`-`) under parent task
+  - Parent must be non-inert: `-`, `*`, or `?` (`!` and `~` are rejected)
 - `-c, --corr`: add as correction child (`?`) under deepest active task
 - `-a, --agent`: add as agent child (`~`) under deepest active task
 
@@ -55,14 +57,14 @@ Rules:
 Copy a shell command for the deepest active task label to the clipboard.
 
 Defaults:
-- Copies `gaa & gcam '<active label>'`
+- Copies `gaa && gcam '<active label>'`
 
 Options:
 - `-c, --commit-command TEXT`: commit command prefix (default: `gcam`)
 - `-a, --add-all-command TEXT`: add-all command prefix (default: `gaa`)
 
 Rules:
-- If one command is empty, only the other command is copied (no `&`)
+- If one command is empty, only the other command is copied (no `&&`)
 - If both are empty, the command errors
 - The copied command string is also printed to output
 
@@ -129,8 +131,8 @@ Typical session order:
 1. `prompt-warrior init --init-task-label "Initialization"`
 2. `prompt-warrior next`
 3. Work with the copied prompt in your LLM.
-4. `prompt-warrior add "Follow-up task"`
-5. `prompt-warrior add --sub A "Subtask detail"` (or use completion)
+4. `prompt-warrior add Follow-up task`
+5. `prompt-warrior add --sub A Subtask detail` (or use completion)
 6. `prompt-warrior done`
 7. `prompt-warrior next`
 8. Repeat steps 3 to 7 until parent is complete.
@@ -162,6 +164,8 @@ Persist in `~/.zshrc`.
 #### uv project
 
 Set it up as follows to get auto-completion without installing `prompt-warrior`. Change the actual path to the cloned directory. 
+
+Here the command is renamed `pwr`.
 
 ```sh
 pwr() {
