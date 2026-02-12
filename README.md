@@ -13,8 +13,8 @@ Initialize a prompts workspace.
 - Fails if the prompts directory already exists
 
 Options:
-- `--no-init`: create directory + `work.md` only
-- `--init-task TEXT`: label and filename seed for the initial task
+- `--no-init-task`: create directory + `work.md` only
+- `--init-task-label TEXT`: label and filename seed for the initial task
 
 ### `prompt-warrior add LABEL_WORDS...`
 Create a task markdown file and add its line to `work.md`.
@@ -87,8 +87,8 @@ All options can be set from env vars:
 |---|---|
 | `--debug` | `PWAR_DEBUG` |
 | `--prompts-dir` | `PWAR_PROMPTS_DIR` |
-| `init --no-init` | `PWAR_NO_INIT` |
-| `init --init-task` | `PWAR_INIT_TASK` |
+| `init --no-init-task` | `PWAR_NO_INIT_TASK` |
+| `init --init-task-label` | `PWAR_INIT_TASK_LABEL` |
 | `add --label` | `PWAR_LABEL` |
 | `add --raw-label` | `PWAR_RAW_LABEL` |
 | `add --top` | `PWAR_TOP` |
@@ -102,7 +102,7 @@ All options can be set from env vars:
 
 Typical session order:
 
-1. `prompt-warrior init --init-task "Initialization"`
+1. `prompt-warrior init --init-task-label "Initialization"`
 2. `prompt-warrior next`
 3. Work with the copied prompt in your LLM.
 4. `prompt-warrior add "Follow-up task"`

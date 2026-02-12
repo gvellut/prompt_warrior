@@ -26,18 +26,19 @@ INDENT_UNIT = " " * INDENT_WIDTH
 MAX_SAFE_LABEL_LENGTH = 48
 FALLBACK_NEWLINE = "\n"
 
-PWAR_DEBUG = "PWAR_DEBUG"
-PWAR_PROMPTS_DIR = "PWAR_PROMPTS_DIR"
-PWAR_NO_INIT = "PWAR_NO_INIT"
-PWAR_INIT_TASK = "PWAR_INIT_TASK"
-PWAR_LABEL = "PWAR_LABEL"
-PWAR_RAW_LABEL = "PWAR_RAW_LABEL"
-PWAR_TOP = "PWAR_TOP"
-PWAR_SUB = "PWAR_SUB"
-PWAR_CORR = "PWAR_CORR"
-PWAR_AGENT = "PWAR_AGENT"
-PWAR_RECURSIVE = "PWAR_RECURSIVE"
-PWAR_KEEP_CHILDREN = "PWAR_KEEP_CHILDREN"
+ENVVAR_PREFIX = "PWAR"
+PWAR_DEBUG = f"{ENVVAR_PREFIX}_DEBUG"
+PWAR_PROMPTS_DIR = f"{ENVVAR_PREFIX}_PROMPTS_DIR"
+PWAR_NO_INIT_TASK = f"{ENVVAR_PREFIX}_NO_INIT_TASK"
+PWAR_INIT_TASK_LABEL = f"{ENVVAR_PREFIX}_INIT_TASK_LABEL"
+PWAR_LABEL = f"{ENVVAR_PREFIX}_LABEL"
+PWAR_RAW_LABEL = f"{ENVVAR_PREFIX}_RAW_LABEL"
+PWAR_TOP = f"{ENVVAR_PREFIX}_TOP"
+PWAR_SUB = f"{ENVVAR_PREFIX}_SUB"
+PWAR_CORR = f"{ENVVAR_PREFIX}_CORR"
+PWAR_AGENT = f"{ENVVAR_PREFIX}_AGENT"
+PWAR_RECURSIVE = f"{ENVVAR_PREFIX}_RECURSIVE"
+PWAR_KEEP_CHILDREN = f"{ENVVAR_PREFIX}_KEEP_CHILDREN"
 
 RICH_THEME = Theme(
     {
@@ -889,16 +890,17 @@ def cli(ctx: click.Context, debug: bool, prompts_dir: Path) -> None:
     help="Initialize the prompts directory and optional initial task.",
 )
 @click.option(
-    "--no-init",
+    "-b",
+    "--no-init-task",
     is_flag=True,
-    envvar=PWAR_NO_INIT,
+    envvar=PWAR_NO_INIT_TASK,
     help="Create prompts directory and work.md without creating an initial task.",
 )
 @click.option(
-    "--init-task",
+    "--init-task-label",
     default=DEFAULT_INIT_TASK_LABEL,
     show_default=True,
-    envvar=PWAR_INIT_TASK,
+    envvar=PWAR_INIT_TASK_LABEL,
     help="Label used for the initial task line and markdown filename seed.",
 )
 @pass_app_context
