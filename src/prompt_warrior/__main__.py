@@ -56,7 +56,7 @@ RICH_THEME = Theme(
 )
 
 TASK_LINE_RE = re.compile(
-    r"^(?P<indent>[ \t]*)(?P<bullet>[-*?!~])(?P<ws1>\s+)\[(?P<link_text>[^\]]*)\]\((?P<link>[^)]+)\)(?P<ws2>\s*)(?P<trailing_label>[^\r\n]*)(?P<newline>\r?\n?)$"
+    r"^(?P<indent>[ \t]*)(?P<bullet>[-*?!~])(?P<ws1>\s+)\[(?P<link_text>[^\]]*)\]\((?P<link>[^)]+)\)(?P<ws2>[ \t]*)(?P<trailing_label>[^\r\n]*)(?P<newline>\r?\n?)$"
 )
 
 
