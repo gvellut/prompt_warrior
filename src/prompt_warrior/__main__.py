@@ -56,7 +56,9 @@ RICH_THEME = Theme(
 )
 
 TASK_LINE_RE = re.compile(
-    r"^(?P<indent>[ \t]*)(?P<bullet>[-*?!~])(?P<ws1>\s+)\[(?P<link_text>[^\]]*)\]\((?P<link>[^)]+)\)(?P<ws2>[ \t]*)(?P<trailing_label>[^\r\n]*)(?P<newline>\r?\n?)$"
+    r"^(?P<indent>[ \t]*)(?P<bullet>[-*?!~])(?P<ws1>\s+)"
+    r"\[(?P<link_text>[^\]]*)\]\((?P<link>[^)]+)\)"
+    r"(?P<ws2>[ \t]*)(?P<trailing_label>[^\r\n]*)(?P<newline>\r?\n?)$"
 )
 
 
@@ -320,7 +322,7 @@ def build_tree(document: WorkDocument) -> None:
 
 
 def validate_child_indentation(document: WorkDocument) -> None:
-    for parent_index, parent in enumerate(document.tasks):
+    for parent in document.tasks:
         children = parent.child_task_indices
         if len(children) < 2:
             continue
@@ -332,9 +334,13 @@ def validate_child_indentation(document: WorkDocument) -> None:
             if child.indent_expanded != expected_depth:
                 raise ParseIssue(
                     "Inconsistent indentation below a single task: "
-                    f"parent line {parent.line_number}, first child line {first_child.line_number} "
-                    f"uses depth {expected_depth}, but line {child.line_number} uses depth {child.indent_expanded}. "
-                    "All direct children of the same parent must share one indentation depth."
+                    f"parent line {parent.line_number}, "
+                    f"first child line {first_child.line_number} "
+                    f"uses depth {expected_depth}, "
+                    f"but line {child.line_number} "
+                    f"uses depth {child.indent_expanded}. "
+                    "All direct children of the same parent "
+                    "must share one indentation depth."
                 )
 
 
@@ -352,9 +358,11 @@ def validate_active_invariants(document: WorkDocument) -> list[InvariantWarning]
                 scope = "top level"
             else:
                 scope = f"children of line {document.tasks[parent_index].line_number}"
+            active_line_list = ", ".join(map(str, active_lines))
             warnings.append(
                 InvariantWarning(
-                    f"Active-task invariant broken for {scope}: multiple '*' tasks found on lines {', '.join(map(str, active_lines))}."
+                    f"Active-task invariant broken for {scope}: "
+                    f"multiple '*' tasks found on lines {active_line_list}."
                 )
             )
 
@@ -370,7 +378,8 @@ def validate_active_invariants(document: WorkDocument) -> list[InvariantWarning]
             ):
                 warnings.append(
                     InvariantWarning(
-                        "Active-task invariant broken: active tasks are not in a single parent-descendant chain."
+                        "Active-task invariant broken: "
+                        "active tasks are not in a single parent-descendant chain."
                     )
                 )
                 return warnings
@@ -1075,7 +1084,8 @@ def add(
     agent_mode: bool,
 ) -> None:
     app_ctx.logger.debug(
-        "Running add with label_words=%s filename=%s top=%s sub_reference=%s corr=%s agent_mode=%s",
+        "Running add with label_words=%s filename=%s top=%s "
+        "sub_reference=%s corr=%s agent_mode=%s",
         label_words,
         filename,
         top,
@@ -1120,7 +1130,8 @@ def add(
         if parent_task.bullet not in SUBTASK_PARENT_BULLETS:
             bullet_char = BULLET_TO_CHAR[parent_task.bullet]
             raise PromptWarriorError(
-                f"Task '{parent_task.label}' on line {parent_task.line_number} is inert ('{bullet_char}'). "
+                f"Task '{parent_task.label}' on line "
+                f"{parent_task.line_number} is inert ('{bullet_char}'). "
                 "`--sub` only allows '-', '*', or '?' tasks."
             )
         mode = AddMode.SUBTASK
@@ -1172,7 +1183,10 @@ def add(
 
 @cli.command(
     cls=RichErrorCommand,
-    help="Mark the deepest active task as done and move it to the end of its sibling list.",
+    help=(
+        "Mark the deepest active task as done "
+        "and move it to the end of its sibling list."
+    ),
 )
 @click.option(
     "-r",
@@ -1263,7 +1277,8 @@ def next_task(app_ctx: AppContext) -> None:
     ]
     if scope_active:
         raise PromptWarriorError(
-            "There is already an active task at this level. Run `prompt-warrior done` first."
+            "There is already an active task at this level. "
+            "Run `prompt-warrior done` first."
         )
 
     next_candidate = builtins.next(
@@ -1278,7 +1293,8 @@ def next_task(app_ctx: AppContext) -> None:
     if next_candidate is None:
         if scope_parent is not None:
             raise PromptWarriorError(
-                "No remaining '-' or '?' child task. Run `prompt-warrior done` to close the parent first."
+                "No remaining '-' or '?' child task. "
+                "Run `prompt-warrior done` to close the parent first."
             )
         raise PromptWarriorError("No remaining '-' or '?' top-level task to activate.")
 
@@ -1386,7 +1402,8 @@ def delete(app_ctx: AppContext, task_ref: str, keep_children: bool) -> None:
     if task.bullet == BulletType.ACTIVE or direct_children_count > 0:
         confirmation_message = (
             f"Delete task '{task.label}' on line {task.line_number}? "
-            f"direct children: {direct_children_count}, total descendants: {len(descendants)}"
+            f"direct children: {direct_children_count}, "
+            f"total descendants: {len(descendants)}"
         )
         if not click.confirm(confirmation_message, default=False):
             raise PromptWarriorError("Delete cancelled by user.")
