@@ -21,11 +21,10 @@ Create a task markdown file and add its line to `work.md`.
 
 - Positional `LABEL_WORDS...` is required
 - Positional text is always the display label in `work.md`
-- `--label/--raw-label` only change the filename stem
+- `--filename` only change the filename stem
 
 Options:
-- `-l, --label TEXT`: safe-ASCII filename stem override
-- `-r, --raw-label TEXT`: raw filename stem override
+- `-l, --filename TEXT`: safe-ASCII filename stem override
 - `-t, --top`: add at top of top-level list
 - `-s, --sub TASK_REF`: add as planned child (`-`) under parent task
 - `-c, --corr`: add as correction child (`?`) under deepest active task
@@ -89,8 +88,7 @@ All options can be set from env vars:
 | `--prompts-dir` | `PWAR_PROMPTS_DIR` |
 | `init --no-init-task` | `PWAR_NO_INIT_TASK` |
 | `init --init-task-label` | `PWAR_INIT_TASK_LABEL` |
-| `add --label` | `PWAR_LABEL` |
-| `add --raw-label` | `PWAR_RAW_LABEL` |
+| `add --filename` | `PWAR_FILENAME` |
 | `add --top` | `PWAR_TOP` |
 | `add --sub` | `PWAR_SUB` |
 | `add --corr` | `PWAR_CORR` |

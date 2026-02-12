@@ -31,8 +31,7 @@ PWAR_DEBUG = f"{ENVVAR_PREFIX}_DEBUG"
 PWAR_PROMPTS_DIR = f"{ENVVAR_PREFIX}_PROMPTS_DIR"
 PWAR_NO_INIT_TASK = f"{ENVVAR_PREFIX}_NO_INIT_TASK"
 PWAR_INIT_TASK_LABEL = f"{ENVVAR_PREFIX}_INIT_TASK_LABEL"
-PWAR_LABEL = f"{ENVVAR_PREFIX}_LABEL"
-PWAR_RAW_LABEL = f"{ENVVAR_PREFIX}_RAW_LABEL"
+PWAR_FILENAME = f"{ENVVAR_PREFIX}_FILENAME"
 PWAR_TOP = f"{ENVVAR_PREFIX}_TOP"
 PWAR_SUB = f"{ENVVAR_PREFIX}_SUB"
 PWAR_CORR = f"{ENVVAR_PREFIX}_CORR"
@@ -904,14 +903,14 @@ def cli(ctx: click.Context, debug: bool, prompts_dir: Path) -> None:
     help="Label used for the initial task line and markdown filename seed.",
 )
 @pass_app_context
-def init(app_ctx: AppContext, no_init: bool, init_task: str) -> None:
+def init(app_ctx: AppContext, no_init_task: bool, init_task_label: str) -> None:
     prompts_dir = app_ctx.prompts_dir
     work_path = prompts_dir / WORK_FILENAME
     app_ctx.logger.debug(
         "Running init with prompts_dir=%s no_init=%s init_task=%s",
         prompts_dir,
-        no_init,
-        init_task,
+        no_init_task,
+        init_task_label,
     )
 
     if prompts_dir.exists():
@@ -919,14 +918,14 @@ def init(app_ctx: AppContext, no_init: bool, init_task: str) -> None:
 
     prompts_dir.mkdir(parents=True, exist_ok=False)
 
-    if no_init:
+    if no_init_task:
         work_path.write_text("", encoding="utf-8")
         app_ctx.console.print(
             f"Initialized workspace at {prompts_dir}", style="success"
         )
         return
 
-    label = init_task.strip() or DEFAULT_INIT_TASK_LABEL
+    label = init_task_label.strip() or DEFAULT_INIT_TASK_LABEL
     safe_component = make_safe_ascii_component(label)
     prefix = choose_unused_prefix(set())
     stem = compose_stem(prefix, safe_component)
@@ -945,17 +944,10 @@ def init(app_ctx: AppContext, no_init: bool, init_task: str) -> None:
 @argument_label_words
 @click.option(
     "-l",
-    "--label",
-    "file_label",
-    envvar=PWAR_LABEL,
+    "--filename",
+    "filename",
+    envvar=PWAR_FILENAME,
     help="Override filename seed with safe-ASCII conversion.",
-)
-@click.option(
-    "-r",
-    "--raw-label",
-    "raw_label",
-    envvar=PWAR_RAW_LABEL,
-    help="Override filename seed using the raw value as-is.",
 )
 @click.option(
     "-t",
@@ -992,18 +984,16 @@ def init(app_ctx: AppContext, no_init: bool, init_task: str) -> None:
 def add(
     app_ctx: AppContext,
     label_words: tuple[str, ...],
-    file_label: str | None,
-    raw_label: str | None,
+    filename: str | None,
     top: bool,
     sub_reference: str | None,
     corr: bool,
     agent_mode: bool,
 ) -> None:
     app_ctx.logger.debug(
-        "Running add with label_words=%s file_label=%s raw_label=%s top=%s sub_reference=%s corr=%s agent_mode=%s",
+        "Running add with label_words=%s filename=%s top=%s sub_reference=%s corr=%s agent_mode=%s",
         label_words,
-        file_label,
-        raw_label,
+        filename,
         top,
         sub_reference,
         corr,
@@ -1014,9 +1004,6 @@ def add(
         raise PromptWarriorError(
             "`add` requires positional label text (LABEL_WORDS...)."
         )
-
-    if file_label and raw_label:
-        raise PromptWarriorError("Use only one of --label or --raw-label.")
 
     mode_count = int(sub_reference is not None) + int(corr) + int(agent_mode)
     if mode_count > 1:
@@ -1031,12 +1018,8 @@ def add(
     if not label:
         raise PromptWarriorError("Task label cannot be empty.")
 
-    if raw_label is not None:
-        label_component = raw_label.strip()
-        if not label_component:
-            raise PromptWarriorError("--raw-label cannot be empty.")
-    elif file_label is not None:
-        label_component = make_safe_ascii_component(file_label)
+    if filename is not None:
+        label_component = make_safe_ascii_component(filename)
     else:
         label_component = make_safe_ascii_component(label)
 
