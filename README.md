@@ -8,20 +8,20 @@
 Initialize a prompts workspace.
 
 - Creates the prompts directory (default: `.prompts`)
-- Creates `.prompts/battle.md`
+- Creates `.prompts/__battle.md`
 - By default creates one initial task and markdown file
 - Fails if the prompts directory already exists
 - In an IDE like VSCode, the link to the task Markdown file can be clicked on to see the content
 
 Options:
-- `--no-init-task`: create directory + `battle.md` only
+- `--no-init-task`: create directory + `__battle.md` only
 - `--init-task-label TEXT`: label and filename seed for the initial task
 
 ### `prompt-warrior add LABEL_WORDS...`
-Create a task markdown file and add its line to `battle.md`.
+Create a task markdown file and add its line to `__battle.md`.
 
 - Positional `LABEL_WORDS...` is required
-- Positional text is always the display label in `battle.md`
+- Positional text is always the display label in `__battle.md`
 - `--filename` only change the filename stem
 - New task lines are written as `BULLET [label](file.md)`
 
@@ -81,7 +81,7 @@ Options:
 Delete a task by reference.
 
 Default behavior:
-- Removes the task line and full subtree from `battle.md`
+- Removes the task line and full subtree from `__battle.md`
 - Deletes markdown files for task + descendants
 
 Options:
