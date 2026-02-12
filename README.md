@@ -60,15 +60,19 @@ Copy a shell command for the deepest active task label to the clipboard.
 
 Defaults:
 - Copies `gaa && gcam '<active label>'`
+- Also marks that deepest active task as done (`!`) and moves it to the end of its sibling list
 
 Options:
 - `-c, --commit-command TEXT`: commit command prefix (default: `gcam`)
 - `-a, --add-all-command TEXT`: add-all command prefix (default: `gaa`)
+- `-n, --no-done`: do not mark task done (keeps previous behavior)
+- `-r, --recursive`: if all siblings are done (ignoring `~`), also close parent, and continue upward
 
 Rules:
 - If one command is empty, only the other command is copied (no `&&`)
 - If both are empty, the command errors
 - The copied command string is also printed to output
+- When done-closing is enabled and `--recursive` is not used, output indicates whether all siblings are also done (ignoring `~`)
 
 ### `prompt-warrior done`
 Close the deepest active task.
@@ -78,6 +82,7 @@ Close the deepest active task.
 
 Options:
 - `-r, --recursive`: if all siblings are done (ignoring `~`), also close parent, and continue upward
+- Without `--recursive`, output also indicates whether all siblings are done (ignoring `~`)
 
 ### `prompt-warrior delete TASK_REF`
 Delete a task by reference.
@@ -124,6 +129,7 @@ All options can be set from env vars:
 | `done --recursive` | `PWAR_RECURSIVE` |
 | `commit --commit-command` | `PWAR_COMMIT_COMMAND` |
 | `commit --add-all-command` | `PWAR_ADD_ALL_COMMAND` |
+| `commit --no-done` | `PWAR_NO_DONE` |
 | `delete --keep-children` | `PWAR_KEEP_CHILDREN` |
 
 ## 30-second workflow

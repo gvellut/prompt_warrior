@@ -1,0 +1,2 @@
+In commit command : make it so the command also sets the done bullet to the relevant task (whose label is copied). Log like when done command is called.
+This is the default. Also add a --no-done / -n to prevent it (like what is done now) + env var

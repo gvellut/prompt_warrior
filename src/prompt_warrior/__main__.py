@@ -44,6 +44,7 @@ PWAR_RECURSIVE = f"{ENVVAR_PREFIX}_RECURSIVE"
 PWAR_KEEP_CHILDREN = f"{ENVVAR_PREFIX}_KEEP_CHILDREN"
 PWAR_COMMIT_COMMAND = f"{ENVVAR_PREFIX}_COMMIT_COMMAND"
 PWAR_ADD_ALL_COMMAND = f"{ENVVAR_PREFIX}_ADD_ALL_COMMAND"
+PWAR_NO_DONE = f"{ENVVAR_PREFIX}_NO_DONE"
 
 RICH_THEME = Theme(
     {
@@ -555,6 +556,16 @@ def argument_task_reference(function: Callable[..., object]) -> Callable[..., ob
     )(function)
 
 
+def option_recursive(function: Callable[..., object]) -> Callable[..., object]:
+    return click.option(
+        "-r",
+        "--recursive",
+        is_flag=True,
+        envvar=PWAR_RECURSIVE,
+        help="Also mark parent tasks done when all siblings are done (ignoring '~').",
+    )(function)
+
+
 def extract_prefix_from_stem(stem: str) -> str | None:
     if "_" not in stem:
         return None
@@ -927,6 +938,95 @@ def siblings_all_done(document: WorkDocument, parent_index: int) -> bool:
     return considered_children > 0
 
 
+def siblings_in_scope_all_done(document: WorkDocument, task_index: int) -> bool:
+    _, siblings = sibling_group(document, task_index)
+    considered_siblings = 0
+    for sibling_index in siblings:
+        bullet = document.tasks[sibling_index].bullet
+        if bullet == BulletType.AGENT:
+            continue
+        considered_siblings += 1
+        if bullet != BulletType.DONE:
+            return False
+    return considered_siblings > 0
+
+
+def close_deepest_active_task(
+    work_path: Path, document: WorkDocument, recursive: bool
+) -> tuple[int, bool | None]:
+    current_task_index = deepest_active_task_index(document)
+    if current_task_index is None:
+        raise PromptWarriorError("No active task found to close.")
+
+    closed_signature = task_signature(document.tasks[current_task_index])
+    current_signature = closed_signature
+    lines = list(document.lines)
+    closed_count = 0
+
+    while True:
+        document = parse_work_lines(work_path, lines)
+        current_task_index = find_task_by_signature(document, current_signature)
+        if current_task_index is None:
+            raise PromptWarriorError(
+                "Could not locate the task to close after internal reordering."
+            )
+
+        parent_signature: TaskSignature | None = None
+        parent_index = document.tasks[current_task_index].parent_task_index
+        if parent_index is not None:
+            parent_signature = task_signature(document.tasks[parent_index])
+
+        lines = mark_done_and_move_to_bottom(document, current_task_index)
+        closed_count += 1
+
+        if not recursive or parent_signature is None:
+            break
+
+        updated_document = parse_work_lines(work_path, lines)
+        updated_parent_index = find_task_by_signature(
+            updated_document, parent_signature
+        )
+        if updated_parent_index is None:
+            break
+
+        parent_task = updated_document.tasks[updated_parent_index]
+        if parent_task.bullet == BulletType.AGENT:
+            break
+
+        if parent_task.bullet == BulletType.DONE:
+            break
+
+        if not siblings_all_done(updated_document, updated_parent_index):
+            break
+
+        current_signature = task_signature(parent_task)
+
+    updated_document = parse_work_lines(work_path, lines)
+    closed_task_index = find_task_by_signature(updated_document, closed_signature)
+    siblings_done = (
+        None
+        if recursive or closed_task_index is None
+        else siblings_in_scope_all_done(updated_document, closed_task_index)
+    )
+
+    write_work_lines(work_path, lines)
+    return closed_count, siblings_done
+
+
+def print_close_result(
+    app_ctx: AppContext, closed_count: int, siblings_done: bool | None
+) -> None:
+    app_ctx.console.print(f"Marked {closed_count} task(s) as done.", style="success")
+    if siblings_done is True:
+        app_ctx.console.print(
+            "All siblings are also done (ignoring '~').", style="highlight"
+        )
+    elif siblings_done is False:
+        app_ctx.console.print(
+            "Some siblings are not done yet (ignoring '~').", style="highlight"
+        )
+
+
 def select_clipboard_provider() -> ClipboardProvider:
     system_name = platform.system()
     if system_name == "Darwin":
@@ -1188,66 +1288,15 @@ def add(
         "and move it to the end of its sibling list."
     ),
 )
-@click.option(
-    "-r",
-    "--recursive",
-    is_flag=True,
-    envvar=PWAR_RECURSIVE,
-    help="Also mark parent tasks done when all siblings are done (ignoring '~').",
-)
+@option_recursive
 @pass_app_context
 def done(app_ctx: AppContext, recursive: bool) -> None:
     app_ctx.logger.debug("Running done with recursive=%s", recursive)
     work_path, document = load_document_for_command(app_ctx)
-
-    current_task_index = deepest_active_task_index(document)
-    if current_task_index is None:
-        raise PromptWarriorError("No active task found to close.")
-
-    current_signature = task_signature(document.tasks[current_task_index])
-    lines = list(document.lines)
-    closed_count = 0
-
-    while True:
-        document = parse_work_lines(work_path, lines)
-        current_task_index = find_task_by_signature(document, current_signature)
-        if current_task_index is None:
-            raise PromptWarriorError(
-                "Could not locate the task to close after internal reordering."
-            )
-
-        parent_signature: TaskSignature | None = None
-        parent_index = document.tasks[current_task_index].parent_task_index
-        if parent_index is not None:
-            parent_signature = task_signature(document.tasks[parent_index])
-
-        lines = mark_done_and_move_to_bottom(document, current_task_index)
-        closed_count += 1
-
-        if not recursive or parent_signature is None:
-            break
-
-        updated_document = parse_work_lines(work_path, lines)
-        updated_parent_index = find_task_by_signature(
-            updated_document, parent_signature
-        )
-        if updated_parent_index is None:
-            break
-
-        parent_task = updated_document.tasks[updated_parent_index]
-        if parent_task.bullet == BulletType.AGENT:
-            break
-
-        if parent_task.bullet == BulletType.DONE:
-            break
-
-        if not siblings_all_done(updated_document, updated_parent_index):
-            break
-
-        current_signature = task_signature(parent_task)
-
-    write_work_lines(work_path, lines)
-    app_ctx.console.print(f"Marked {closed_count} task(s) as done.", style="success")
+    closed_count, siblings_done = close_deepest_active_task(
+        work_path=work_path, document=document, recursive=recursive
+    )
+    print_close_result(app_ctx, closed_count, siblings_done)
 
 
 @cli.command(
@@ -1351,14 +1400,31 @@ def read(app_ctx: AppContext) -> None:
     envvar=PWAR_ADD_ALL_COMMAND,
     help="Command prefix used for the add-all step.",
 )
+@click.option(
+    "-n",
+    "--no-done",
+    is_flag=True,
+    envvar=PWAR_NO_DONE,
+    help="Do not mark the deepest active task as done.",
+)
+@option_recursive
 @pass_app_context
-def commit(app_ctx: AppContext, commit_command: str, add_all_command: str) -> None:
+def commit(
+    app_ctx: AppContext,
+    commit_command: str,
+    add_all_command: str,
+    no_done: bool,
+    recursive: bool,
+) -> None:
     app_ctx.logger.debug(
-        "Running commit with commit_command=%s add_all_command=%s",
+        "Running commit with commit_command=%s add_all_command=%s no_done=%s "
+        "recursive=%s",
         commit_command,
         add_all_command,
+        no_done,
+        recursive,
     )
-    _, document = load_document_for_command(app_ctx)
+    work_path, document = load_document_for_command(app_ctx)
 
     current_task_index = deepest_active_task_index(document)
     if current_task_index is None:
@@ -1372,6 +1438,14 @@ def commit(app_ctx: AppContext, commit_command: str, add_all_command: str) -> No
     )
     app_ctx.clipboard.copy(command_text)
     app_ctx.console.print(command_text, style="highlight")
+
+    if no_done:
+        return
+
+    closed_count, siblings_done = close_deepest_active_task(
+        work_path=work_path, document=document, recursive=recursive
+    )
+    print_close_result(app_ctx, closed_count, siblings_done)
 
 
 @cli.command(
