@@ -4,8 +4,8 @@ from pathlib import Path
 
 import click
 
-from ..cli_params import option_recursive, pass_app_context
-from ..core import (
+from prompt_warrior.cli_params import option_recursive, pass_app_context
+from prompt_warrior.core import (
     deepest_active_task_index,
     find_task_by_signature,
     load_document_for_command,
@@ -16,9 +16,9 @@ from ..core import (
     task_signature,
     write_work_lines,
 )
-from ..errors import PromptWarriorError
-from ..models import AppContext, BulletType, TaskSignature, WorkDocument
-from ..rich_error import RichErrorCommand
+from prompt_warrior.errors import PromptWarriorError
+from prompt_warrior.models import AppContext, BulletType, TaskSignature, WorkDocument
+from prompt_warrior.rich_error import RichErrorCommand
 
 
 def close_deepest_active_task(
@@ -103,22 +103,21 @@ def print_close_result(
         )
 
 
-def register(cli: click.Group) -> None:
-    @cli.command(
-        cls=RichErrorCommand,
-        help=(
-            "Mark the deepest active task as done "
-            "and move it to the end of its sibling list."
-        ),
+@click.command(
+    cls=RichErrorCommand,
+    help=(
+        "Mark the deepest active task as done "
+        "and move it to the end of its sibling list."
+    ),
+)
+@option_recursive
+@pass_app_context
+def done(app_ctx: AppContext, recursive: bool) -> None:
+    app_ctx.logger.debug("Running done with recursive=%s", recursive)
+    work_path, document = load_document_for_command(app_ctx)
+    closed_count, siblings_done = close_deepest_active_task(
+        work_path=work_path,
+        document=document,
+        recursive=recursive,
     )
-    @option_recursive
-    @pass_app_context
-    def done(app_ctx: AppContext, recursive: bool) -> None:
-        app_ctx.logger.debug("Running done with recursive=%s", recursive)
-        work_path, document = load_document_for_command(app_ctx)
-        closed_count, siblings_done = close_deepest_active_task(
-            work_path=work_path,
-            document=document,
-            recursive=recursive,
-        )
-        print_close_result(app_ctx, closed_count, siblings_done)
+    print_close_result(app_ctx, closed_count, siblings_done)

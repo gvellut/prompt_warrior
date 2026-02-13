@@ -2,20 +2,31 @@ from __future__ import annotations
 
 import click
 
-from .add import register as register_add
-from .commit import register as register_commit
-from .delete import register as register_delete
-from .done import register as register_done
-from .init import register as register_init
-from .next_task import register as register_next
-from .read import register as register_read
+from .add import add
+from .commit import commit
+from .delete import delete
+from .done import done
+from .init import init
+from .next_task import next_task
+from .read import read
+
+__all__ = [
+    "add",
+    "commit",
+    "delete",
+    "done",
+    "init",
+    "next_task",
+    "read",
+    "register_commands",
+]
 
 
 def register_commands(cli: click.Group) -> None:
-    register_init(cli)
-    register_add(cli)
-    register_done(cli)
-    register_next(cli)
-    register_read(cli)
-    register_commit(cli)
-    register_delete(cli)
+    cli.add_command(init)
+    cli.add_command(add)
+    cli.add_command(done)
+    cli.add_command(next_task)
+    cli.add_command(read)
+    cli.add_command(commit)
+    cli.add_command(delete)

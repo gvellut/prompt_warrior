@@ -12,6 +12,11 @@ The code is organized as:
 - `src/prompt_warrior/commands/*.py` for one file per command.
 - `src/prompt_warrior/core.py`, `src/prompt_warrior/models.py`, and `src/prompt_warrior/constants.py` for shared logic/models/config.
 
-After making edits to the Python code, run `ruff check --fix` and fix the issues that come up.
 
-Run `ruff format` at the end.
+## Lint
+After making edits to the Python code, always run `ruff check --fix` at the end and fix the issues that come up.
+Always run `ruff format` at the end when returning to the user.
+
+## Python
+
+Use relative imports for the same module or below ie with a single '.'. Never use '..' : Always use the absolute import then.
