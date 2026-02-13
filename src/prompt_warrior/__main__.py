@@ -10,6 +10,9 @@ from .clipboard import select_clipboard_provider
 from .commands import register_commands
 from .constants import DEFAULT_PROMPTS_DIR, PWAR_DEBUG, PWAR_PROMPTS_DIR, RICH_THEME
 from .models import AppContext
+from .shell_completion import register_shell_completion_overrides
+
+register_shell_completion_overrides()
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
