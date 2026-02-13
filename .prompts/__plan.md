@@ -1,4 +1,3 @@
-- [Make some small changes](G_Make_some_small_changes.md)
 ! [](A_details.md) Change some details
 ! [More details](B_More_details.md)
 ! [Sub correct](C_Sub_correct.md)
@@ -9,3 +8,4 @@
     ! [More in common : close + log + options](F.B_More_in_common_close_log_options.md)
 ! [Refactor](H_Refactor.md)
     ! [Fix the register](H.A_Fix_the_register.md)
+! [Make some small changes](G_Make_some_small_changes.md)

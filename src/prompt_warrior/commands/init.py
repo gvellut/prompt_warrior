@@ -30,7 +30,7 @@ from prompt_warrior.rich_error import RichErrorCommand
     "--no-init-task",
     is_flag=True,
     envvar=PWAR_NO_INIT_TASK,
-    help="Create prompts directory and battle.md without creating an initial task.",
+    help="Create prompts directory and __plan.md without creating an initial task.",
 )
 @click.option(
     "--init-task-label",

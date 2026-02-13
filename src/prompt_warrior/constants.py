@@ -5,7 +5,7 @@ import re
 from rich.theme import Theme
 
 DEFAULT_PROMPTS_DIR = ".prompts"
-WORK_FILENAME = "__battle.md"
+WORK_FILENAME = "__plan.md"
 DEFAULT_INIT_TASK_LABEL = "Initialization"
 DEFAULT_COMMIT_COMMAND = "gcam"
 DEFAULT_ADD_ALL_COMMAND = "gaa"
@@ -25,7 +25,7 @@ PWAR_TOP = f"{ENVVAR_PREFIX}_TOP"
 PWAR_SUB = f"{ENVVAR_PREFIX}_SUB"
 PWAR_CORR = f"{ENVVAR_PREFIX}_CORR"
 PWAR_AGENT = f"{ENVVAR_PREFIX}_AGENT"
-PWAR_RECURSIVE = f"{ENVVAR_PREFIX}_RECURSIVE"
+PWAR_NO_RECURSIVE = f"{ENVVAR_PREFIX}_NO_RECURSIVE"
 PWAR_KEEP_CHILDREN = f"{ENVVAR_PREFIX}_KEEP_CHILDREN"
 PWAR_COMMIT_COMMAND = f"{ENVVAR_PREFIX}_COMMIT_COMMAND"
 PWAR_ADD_ALL_COMMAND = f"{ENVVAR_PREFIX}_ADD_ALL_COMMAND"
@@ -42,7 +42,7 @@ RICH_THEME = Theme(
 )
 
 TASK_LINE_RE = re.compile(
-    r"^(?P<indent>[ \t]*)(?P<bullet>[-*?!~])(?P<ws1>\s+)"
+    r"^(?P<indent>[ \t]*)(?P<bullet>\*\?|!\?|[-*?!~])(?P<ws1>\s+)"
     r"\[(?P<link_text>[^\]]*)\]\((?P<link>[^)]+)\)"
     r"(?P<ws2>[ \t]*)(?P<trailing_label>[^\r\n]*)(?P<newline>\r?\n?)$"
 )

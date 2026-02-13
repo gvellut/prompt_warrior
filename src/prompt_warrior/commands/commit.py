@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import click
 
-from prompt_warrior.cli_params import option_recursive, pass_app_context
+from prompt_warrior.cli_params import option_no_recursive, pass_app_context
 from prompt_warrior.constants import (
     DEFAULT_ADD_ALL_COMMAND,
     DEFAULT_COMMIT_COMMAND,
@@ -48,22 +48,23 @@ from .done import close_deepest_active_task, print_close_result
     envvar=PWAR_NO_DONE,
     help="Do not mark the deepest active task as done.",
 )
-@option_recursive
+@option_no_recursive
 @pass_app_context
 def commit(
     app_ctx: AppContext,
     commit_command: str,
     add_all_command: str,
     no_done: bool,
-    recursive: bool,
+    no_recursive: bool,
 ) -> None:
+    recursive = not no_recursive
     app_ctx.logger.debug(
-        "Running commit with commit_command=%s add_all_command=%s no_done=%s "
-        "recursive=%s",
+        "Running commit with commit_command=%s add_all_command=%s "
+        "no_done=%s no_recursive=%s",
         commit_command,
         add_all_command,
         no_done,
-        recursive,
+        no_recursive,
     )
     work_path, document = load_document_for_command(app_ctx)
 
@@ -83,9 +84,16 @@ def commit(
     if no_done:
         return
 
-    closed_count, siblings_done = close_deepest_active_task(
-        work_path=work_path,
-        document=document,
-        recursive=recursive,
+    closed_count, shallowest_depth, remaining_tasks_in_scope = (
+        close_deepest_active_task(
+            work_path=work_path,
+            document=document,
+            recursive=recursive,
+        )
     )
-    print_close_result(app_ctx, closed_count, siblings_done)
+    print_close_result(
+        app_ctx,
+        closed_count,
+        shallowest_depth,
+        remaining_tasks_in_scope,
+    )

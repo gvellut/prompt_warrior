@@ -6,4 +6,4 @@ class PromptWarriorError(Exception):
 
 
 class ParseIssue(PromptWarriorError):
-    """Raised when the battle file has a structural issue."""
+    """Raised when the plan file has a structural issue."""

@@ -36,7 +36,7 @@ from prompt_warrior.models import (
 from prompt_warrior.rich_error import RichErrorCommand
 
 
-@click.command(cls=RichErrorCommand, help="Create a new task and add it to battle.md.")
+@click.command(cls=RichErrorCommand, help="Create a new task and add it to __plan.md.")
 @argument_label_words
 @click.option(
     "-l",
@@ -63,7 +63,7 @@ from prompt_warrior.rich_error import RichErrorCommand
 )
 @click.option(
     "-c",
-    "--corr",
+    "--cor",
     is_flag=True,
     envvar=PWAR_CORR,
     help="Create as correction child (?) under the deepest active task.",
@@ -104,11 +104,11 @@ def add(
 
     mode_count = int(sub_reference is not None) + int(corr) + int(agent_mode)
     if mode_count > 1:
-        raise PromptWarriorError("Use only one of --sub, --corr, or --agent.")
+        raise PromptWarriorError("Use only one of --sub, --cor, or --agent.")
 
     if top and mode_count > 0:
         raise PromptWarriorError(
-            "--top cannot be combined with --sub, --corr, or --agent."
+            "--top cannot be combined with --sub, --cor, or --agent."
         )
 
     label = " ".join(label_words).strip()
@@ -142,7 +142,7 @@ def add(
         parent_task_index = deepest_active_task_index(document)
         if parent_task_index is None:
             raise PromptWarriorError(
-                "No active task found. `--corr` requires an active task."
+                "No active task found. `--cor` requires an active task."
             )
         bullet = BulletType.CORRECTION
         mode = AddMode.CORRECTION_CHILD

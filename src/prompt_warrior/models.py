@@ -64,6 +64,7 @@ class TaskLine:
     indent_raw: str
     indent_expanded: int
     bullet: BulletType
+    is_correction: bool
     ws_after_bullet: str
     link_path: str
     label: str

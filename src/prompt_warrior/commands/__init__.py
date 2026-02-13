@@ -18,7 +18,6 @@ __all__ = [
     "init",
     "next_task",
     "read",
-    "register_commands",
 ]
 
 

@@ -45,8 +45,7 @@ def next_task(app_ctx: AppContext) -> None:
     ]
     if scope_active:
         raise PromptWarriorError(
-            "There is already an active task at this level. "
-            "Run `prompt-warrior done` first."
+            "There is already an active task at this level. Run `pwr done` first."
         )
 
     next_candidate = builtins.next(
@@ -62,7 +61,7 @@ def next_task(app_ctx: AppContext) -> None:
         if scope_parent is not None:
             raise PromptWarriorError(
                 "No remaining '-' or '?' child task. "
-                "Run `prompt-warrior done` to close the parent first."
+                "Run `pwr done` to close the parent first."
             )
         raise PromptWarriorError("No remaining '-' or '?' top-level task to activate.")
 

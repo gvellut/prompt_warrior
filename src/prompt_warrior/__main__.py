@@ -26,7 +26,7 @@ from .models import AppContext
     default=Path(DEFAULT_PROMPTS_DIR),
     show_default=True,
     envvar=PWAR_PROMPTS_DIR,
-    help="Directory containing prompts and battle.md.",
+    help="Directory containing prompts and __plan.md.",
 )
 @click.pass_context
 def cli(ctx: click.Context, debug: bool, prompts_dir: Path) -> None:

@@ -59,6 +59,16 @@ def resolve_task_label(link_text: str, trailing_label: str) -> str:
     return trailing_label.strip()
 
 
+def parse_bullet_token(token: str) -> tuple[BulletType, bool]:
+    if token == "*?":
+        return BulletType.ACTIVE, True
+    if token == "!?":
+        return BulletType.DONE, True
+    if token == "?":
+        return BulletType.CORRECTION, True
+    return CHAR_TO_BULLET[token], False
+
+
 def parse_work_lines(path: Path, lines: list[str]) -> WorkDocument:
     document = WorkDocument(
         path=path,
@@ -72,8 +82,8 @@ def parse_work_lines(path: Path, lines: list[str]) -> WorkDocument:
         if not match:
             continue
 
-        bullet_char = match.group("bullet")
-        bullet = CHAR_TO_BULLET[bullet_char]
+        bullet_token = match.group("bullet")
+        bullet, is_correction = parse_bullet_token(bullet_token)
         indent_raw = match.group("indent")
         label = resolve_task_label(
             link_text=match.group("link_text"),
@@ -84,6 +94,7 @@ def parse_work_lines(path: Path, lines: list[str]) -> WorkDocument:
             indent_raw=indent_raw,
             indent_expanded=indent_width(indent_raw),
             bullet=bullet,
+            is_correction=is_correction,
             ws_after_bullet=match.group("ws1"),
             link_path=match.group("link"),
             label=label,
@@ -101,7 +112,7 @@ def parse_work_lines(path: Path, lines: list[str]) -> WorkDocument:
 
 def parse_work_document(path: Path) -> WorkDocument:
     if not path.exists():
-        raise PromptWarriorError(f"Missing battle file: {path}")
+        raise PromptWarriorError(f"Missing plan file: {path}")
 
     content = path.read_text(encoding="utf-8")
     return parse_work_lines(path=path, lines=content.splitlines(keepends=True))
@@ -265,6 +276,11 @@ def render_task_line(
     indent_raw: str | None = None,
 ) -> str:
     rendered_bullet = BULLET_TO_CHAR[bullet or task.bullet]
+    if task.is_correction and (bullet or task.bullet) in {
+        BulletType.ACTIVE,
+        BulletType.DONE,
+    }:
+        rendered_bullet = f"{rendered_bullet}?"
     rendered_indent = task.indent_raw if indent_raw is None else indent_raw
     return (
         f"{rendered_indent}{rendered_bullet}{task.ws_after_bullet}"
@@ -543,13 +559,12 @@ def require_workspace(app_ctx: AppContext) -> Path:
 
     if not prompts_dir.exists():
         raise PromptWarriorError(
-            f"Prompts directory '{prompts_dir}' does not exist. "
-            "Run `prompt-warrior init` first."
+            f"Prompts directory '{prompts_dir}' does not exist. Run `pwr init` first."
         )
     if not prompts_dir.is_dir():
         raise PromptWarriorError(f"Path '{prompts_dir}' exists but is not a directory.")
     if not work_path.exists():
-        raise PromptWarriorError(f"Missing battle file '{work_path}'.")
+        raise PromptWarriorError(f"Missing plan file '{work_path}'.")
 
     return work_path
 
@@ -667,6 +682,16 @@ def mark_done_and_move_to_bottom(document: WorkDocument, task_index: int) -> lis
     return lines
 
 
+def remaining_relevant_siblings_count(document: WorkDocument, task_index: int) -> int:
+    _, siblings = sibling_group(document, task_index)
+    return sum(
+        1
+        for sibling_index in siblings
+        if document.tasks[sibling_index].bullet
+        not in {BulletType.DONE, BulletType.AGENT}
+    )
+
+
 def siblings_all_done(document: WorkDocument, parent_index: int) -> bool:
     considered_children = 0
     for child_index in document.tasks[parent_index].child_task_indices:
@@ -677,16 +702,3 @@ def siblings_all_done(document: WorkDocument, parent_index: int) -> bool:
         if bullet != BulletType.DONE:
             return False
     return considered_children > 0
-
-
-def siblings_in_scope_all_done(document: WorkDocument, task_index: int) -> bool:
-    _, siblings = sibling_group(document, task_index)
-    considered_siblings = 0
-    for sibling_index in siblings:
-        bullet = document.tasks[sibling_index].bullet
-        if bullet == BulletType.AGENT:
-            continue
-        considered_siblings += 1
-        if bullet != BulletType.DONE:
-            return False
-    return considered_siblings > 0
