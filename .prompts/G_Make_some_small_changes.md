@@ -4,6 +4,8 @@
 Do not log if recursive or not (the user will know) 
 For the term used for the level : Use "Top level" for level 0 (the one with no tabulation ie with no task --sub), Then "Sublevel 1" for level 1, "Sublevel 2" for level 2 and so on
 
+- Change the --recursive in done / commit : remove it and replace it with a --no-recursive (so default is recursive). Adapt the code. Change the env var name too.
+
 - correction : keep ? with * and ! (prefix) : they should appear as *? and !? (so first the bullet type used now, followed by the ?, if the original task was ?).
 Make sure to also change the filtering (for relevant issues), on top of the updating.
 

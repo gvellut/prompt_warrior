@@ -7,5 +7,5 @@
 ! [Commit sets done](F_Commit_sets_done.md)
     ! [Same behaviour](F.A_Same_behaviour.md)
     ! [More in common : close + log + options](F.B_More_in_common_close_log_options.md)
-* [Refactor](H_Refactor.md)
+! [Refactor](H_Refactor.md)
     ! [Fix the register](H.A_Fix_the_register.md)
