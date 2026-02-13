@@ -1,3 +1,4 @@
+* [Make some small changes](G_Make_some_small_changes.md)
 ! [](A_details.md) Change some details
 ! [More details](B_More_details.md)
 ! [Sub correct](C_Sub_correct.md)
