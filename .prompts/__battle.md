@@ -1,4 +1,4 @@
-* [Make some small changes](G_Make_some_small_changes.md)
+- [Make some small changes](G_Make_some_small_changes.md)
 ! [](A_details.md) Change some details
 ! [More details](B_More_details.md)
 ! [Sub correct](C_Sub_correct.md)
@@ -7,3 +7,4 @@
 ! [Commit sets done](F_Commit_sets_done.md)
     ! [Same behaviour](F.A_Same_behaviour.md)
     ! [More in common : close + log + options](F.B_More_in_common_close_log_options.md)
+! [Refactor](H_Refactor.md)

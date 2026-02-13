@@ -4,6 +4,15 @@
 
 Currently, the only supported system is macos (for copying to the clipboard using `pbcopy`).
 
+## Code layout
+
+- `src/prompt_warrior/__main__.py`: thin entrypoint
+- `src/prompt_warrior/cli.py`: root Click group + app context setup
+- `src/prompt_warrior/commands/*.py`: one file per command
+- `src/prompt_warrior/core.py`: shared document/task operations
+- `src/prompt_warrior/models.py`: shared models/enums
+- `src/prompt_warrior/constants.py`: defaults, env vars, and parse constants
+
 ## Commands
 
 ### `prompt-warrior init`

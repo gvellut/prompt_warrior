@@ -1,0 +1,80 @@
+from __future__ import annotations
+
+import click
+
+from ..cli_params import pass_app_context
+from ..constants import (
+    DEFAULT_INIT_TASK_LABEL,
+    FALLBACK_NEWLINE,
+    MARKDOWN_EXTENSION,
+    PWAR_INIT_TASK_LABEL,
+    PWAR_NO_INIT_TASK,
+    WORK_FILENAME,
+)
+from ..core import choose_unused_prefix, compose_stem, make_safe_ascii_component
+from ..errors import PromptWarriorError
+from ..models import AppContext
+from ..rich_error import RichErrorCommand
+
+
+def register(cli: click.Group) -> None:
+    @cli.command(
+        cls=RichErrorCommand,
+        help="Initialize the prompts directory and optional initial task.",
+    )
+    @click.option(
+        "-b",
+        "--no-init-task",
+        is_flag=True,
+        envvar=PWAR_NO_INIT_TASK,
+        help=(
+            "Create prompts directory and battle.md without creating an initial task."
+        ),
+    )
+    @click.option(
+        "--init-task-label",
+        default=DEFAULT_INIT_TASK_LABEL,
+        show_default=True,
+        envvar=PWAR_INIT_TASK_LABEL,
+        help="Label used for the initial task line and markdown filename seed.",
+    )
+    @pass_app_context
+    def init(app_ctx: AppContext, no_init_task: bool, init_task_label: str) -> None:
+        prompts_dir = app_ctx.prompts_dir
+        work_path = prompts_dir / WORK_FILENAME
+        app_ctx.logger.debug(
+            "Running init with prompts_dir=%s no_init=%s init_task=%s",
+            prompts_dir,
+            no_init_task,
+            init_task_label,
+        )
+
+        if prompts_dir.exists():
+            raise PromptWarriorError(f"Prompts directory already exists: {prompts_dir}")
+
+        prompts_dir.mkdir(parents=True, exist_ok=False)
+
+        if no_init_task:
+            work_path.write_text("", encoding="utf-8")
+            app_ctx.console.print(
+                f"Initialized workspace at {prompts_dir}",
+                style="success",
+            )
+            return
+
+        label = init_task_label.strip() or DEFAULT_INIT_TASK_LABEL
+        safe_component = make_safe_ascii_component(label)
+        prefix = choose_unused_prefix(set())
+        stem = compose_stem(prefix, safe_component)
+        file_name = f"{stem}{MARKDOWN_EXTENSION}"
+
+        (prompts_dir / file_name).write_text("", encoding="utf-8")
+        work_path.write_text(
+            f"- [{label}]({file_name}){FALLBACK_NEWLINE}",
+            encoding="utf-8",
+        )
+
+        app_ctx.console.print(
+            f"Initialized workspace at {prompts_dir}", style="success"
+        )
+        app_ctx.console.print(f"Created initial task: {label}", style="highlight")
