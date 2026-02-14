@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 import click
 
-from prompt_warrior.cli_params import option_no_recursive, pass_app_context
+from prompt_warrior.cli_params import pass_app_context
+from prompt_warrior.constants import PWAR_RECURSIVE
 from prompt_warrior.core import (
     deepest_active_task_index,
     find_task_by_signature,
@@ -124,6 +126,16 @@ def print_close_result(
     )
 
 
+def option_recursive(function: Callable[..., object]) -> Callable[..., object]:
+    return click.option(
+        "--recursive",
+        "-r",
+        is_flag=True,
+        envvar=PWAR_RECURSIVE,
+        help="Also mark parent tasks done when all siblings are done.",
+    )(function)
+
+
 @click.command(
     cls=RichErrorCommand,
     help=(
@@ -131,11 +143,10 @@ def print_close_result(
         "and move it to the end of its sibling list."
     ),
 )
-@option_no_recursive
+@option_recursive
 @pass_app_context
-def done(app_ctx: AppContext, no_recursive: bool) -> None:
-    recursive = not no_recursive
-    app_ctx.logger.debug("Running done with no_recursive=%s", no_recursive)
+def done(app_ctx: AppContext, recursive: bool) -> None:
+    app_ctx.logger.debug("Running done with recursive=%s", recursive)
     work_path, document = load_document_for_command(app_ctx)
     closed_count, shallowest_depth, remaining_tasks_in_scope = (
         close_deepest_active_task(

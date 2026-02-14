@@ -5,7 +5,7 @@ from collections.abc import Callable
 import click
 from click.shell_completion import CompletionItem
 
-from .constants import PWAR_NO_RECURSIVE, WORK_FILENAME
+from .constants import WORK_FILENAME
 from .core import parse_work_document, resolve_prompts_dir_from_ctx
 from .errors import PromptWarriorError
 from .models import SUBTASK_PARENT_BULLETS, AppContext
@@ -70,13 +70,4 @@ def argument_task_reference(function: Callable[..., object]) -> Callable[..., ob
         "task_ref",
         metavar="TASK_REF",
         shell_complete=shell_complete_task_reference,
-    )(function)
-
-
-def option_no_recursive(function: Callable[..., object]) -> Callable[..., object]:
-    return click.option(
-        "--no-recursive",
-        is_flag=True,
-        envvar=PWAR_NO_RECURSIVE,
-        help="Do not mark parent tasks done when all siblings are done.",
     )(function)

@@ -1,4 +1,3 @@
-- [Some refinements](I_Some_refinements.md)
 ! [](A_details.md) Change some details
 ! [More details](B_More_details.md)
 ! [Sub correct](C_Sub_correct.md)
@@ -10,3 +9,4 @@
 ! [Refactor](H_Refactor.md)
     ! [Fix the register](H.A_Fix_the_register.md)
 ! [Make some small changes](G_Make_some_small_changes.md)
+! [Some refinements](I_Some_refinements.md)

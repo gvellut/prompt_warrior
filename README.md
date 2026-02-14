@@ -57,10 +57,10 @@ Close the deepest active task.
 
 - Marks it done (`!` or `!?`)
 - Moves the task block to the end of its sibling list
-- By default closes recursively upward when all relevant siblings are done (ignores `~`)
+- By default closes only the deepest active task (non-recursive)
 
 Options:
-- `--no-recursive`: close only the deepest active task
+- `-r, --recursive`: also close parent tasks upward when all relevant siblings are done (ignores `~`)
 
 Output:
 - Always prints number of closed tasks
@@ -81,7 +81,7 @@ Options:
 - `-c, --commit-command TEXT`: commit command prefix (default: `gcam`)
 - `-a, --add-all-command TEXT`: add-all command prefix (default: `gaa`)
 - `-n, --no-done`: do not close task(s)
-- `--no-recursive`: when closing is enabled, close only deepest active task
+- `-r, --recursive`: when closing is enabled, also close parent tasks upward when all relevant siblings are done
 
 ### `delete TASK_REF`
 Delete a task by reference.
@@ -120,11 +120,11 @@ Resolution order: stem, then prefix, then planned index.
 | `add --sub` | `PWAR_SUB` |
 | `add --corr` | `PWAR_CORR` |
 | `add --agent` | `PWAR_AGENT` |
-| `done --no-recursive` | `PWAR_NO_RECURSIVE` |
+| `done --recursive` | `PWAR_RECURSIVE` |
 | `commit --commit-command` | `PWAR_COMMIT_COMMAND` |
 | `commit --add-all-command` | `PWAR_ADD_ALL_COMMAND` |
 | `commit --no-done` | `PWAR_NO_DONE` |
-| `commit --no-recursive` | `PWAR_NO_RECURSIVE` |
+| `commit --recursive` | `PWAR_RECURSIVE` |
 | `delete --keep-children` | `PWAR_KEEP_CHILDREN` |
 
 ## Quick workflow
