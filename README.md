@@ -169,6 +169,12 @@ The command is a function named `pwr` and wraps `uv run`.
 pwr() {
   VIRTUAL_ENV= uv run --project /Users/guilhem/Documents/projects/github/prompt_warrior prompt-warrior "$@"
 }
-eval "$(VIRTUAL_ENV= _PROMPT_WARRIOR_COMPLETE=zsh_source pwr)"
+eval "$(
+_PROMPT_WARRIOR_COMPLETE=zsh_source pwr |\
+sed \
+ -e "s/(( ! \$+commands\[prompt-warrior\] )) && return 1//g" \
+ -e "s| prompt-warrior)| pwr)|g" \
+ -e "s/env COMP_WORDS=/COMP_WORDS=/g"	
+)"
 compdef pwr=prompt-warrior
 ```
