@@ -1,0 +1,2 @@
+- Instead of default recursive for done / commit : make the default "NOT recursive". Also change the option flag to --recursive / -r instead of --no-recursive (no object now) to enable that behaviour.
+- Update the README to reflect those changes
