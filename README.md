@@ -1,6 +1,9 @@
-# prompt_warrior
+# Prompt Warrior (pwr)
 
 `prompt-warrior` is a CLI for managing prompt task files and a hierarchical task table-of-contents in Markdown.
+
+> The greatness of humans lies not in their existence, but in their command. Where there is an agent, there is a drive to overcome, but a drive without direction is chaos. The task is to harness that will to power and bend it toward a singular purpose. True mastery is found not in the machine, but in the PWR that directs its soul.
+> - The Over-Coder
 
 ## Task file
 
