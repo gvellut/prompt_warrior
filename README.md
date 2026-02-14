@@ -1,25 +1,12 @@
 # prompt_warrior
 
-`pwr` is a CLI for managing prompt task files and a hierarchical task table-of-contents in Markdown.
-
-Clipboard copy is supported on:
-- macOS (`pbcopy`)
-- Linux (`wl-copy`, `xclip`, or `xsel`)
-- Windows (`clip`)
-
-## Code layout
-
-- `src/prompt_warrior/__main__.py`: root Click group + app context setup
-- `src/prompt_warrior/commands/*.py`: one file per command
-- `src/prompt_warrior/core.py`: shared document/task operations
-- `src/prompt_warrior/models.py`: shared models/enums
-- `src/prompt_warrior/constants.py`: defaults, env vars, parse constants
+`prompt-warrior` is a CLI for managing prompt task files and a hierarchical task table-of-contents in Markdown.
 
 ## Task file
 
 The table-of-contents file is `__plan.md` inside the prompts directory (default: `.prompts`).
 
-Supported task bullets:
+Possible task bullets:
 - `-`: planned
 - `*`: active
 - `?`: correction (planned)
@@ -30,7 +17,9 @@ Supported task bullets:
 
 ## Commands
 
-### `pwr init`
+Run with `prompt-warrior ...`.
+
+### `init`
 Initialize a prompts workspace.
 
 - Creates the prompts directory (default: `.prompts`)
@@ -42,7 +31,7 @@ Options:
 - `--no-init-task`: create directory + `__plan.md` only
 - `--init-task-label TEXT`: label and filename seed for the initial task
 
-### `pwr add LABEL_WORDS...`
+### `add LABEL_WORDS...`
 Create a task markdown file and add its line to `__plan.md`.
 
 Options:
@@ -52,7 +41,7 @@ Options:
 - `-c, --corr`: add as correction child (`?`) under deepest active task
 - `-a, --agent`: add as agent child (`~`) under deepest active task
 
-### `pwr next`
+### `next`
 Activate the next actionable task and copy its markdown content to the clipboard.
 
 Selection rules:
@@ -60,10 +49,10 @@ Selection rules:
 - Otherwise: activate first top-level `-` or `?`
 - If no active task exists: activate first top-level `-` or `?`
 
-### `pwr read`
+### `read`
 Copy the deepest active task content to the clipboard without changing task status.
 
-### `pwr done`
+### `done`
 Close the deepest active task.
 
 - Marks it done (`!` or `!?`)
@@ -81,12 +70,12 @@ Output:
 - Non-recursive: level of the closed task
 - Recursive: level of the shallowest task that was closed
 
-### `pwr commit`
+### `commit`
 Copy a shell command for the deepest active task label to the clipboard.
 
 Defaults:
 - Copies `gaa && gcam '<active label>'`
-- Also closes task(s) using the same close behavior as `pwr done`
+- Also closes task(s) using the same close behavior as `done`
 
 Options:
 - `-c, --commit-command TEXT`: commit command prefix (default: `gcam`)
@@ -94,7 +83,7 @@ Options:
 - `-n, --no-done`: do not close task(s)
 - `--no-recursive`: when closing is enabled, close only deepest active task
 
-### `pwr delete TASK_REF`
+### `delete TASK_REF`
 Delete a task by reference.
 
 Default behavior:
@@ -140,13 +129,13 @@ Resolution order: stem, then prefix, then planned index.
 
 ## Quick workflow
 
-1. `pwr init --init-task-label "Initialization"`
-2. `pwr next`
+1. `init --init-task-label "Initialization"`
+2. `next`
 3. Work with the copied prompt in your LLM.
-4. `pwr add Follow-up task`
-5. `pwr add --sub A subtask detail`
-6. `pwr done`
-7. `pwr next`
+4. `add Follow-up task`
+5. `add --sub A subtask detail`
+6. `done`
+7. `next`
 
 ## Autocompletion
 
@@ -157,7 +146,7 @@ Task-reference completion is enabled for:
 ### Bash
 
 ```bash
-eval "$(_PWR_COMPLETE=bash_source pwr)"
+eval "$(_PROMPT_WARRIOR_COMPLETE=bash_source prompt-warrior)"
 ```
 
 Persist in `~/.bashrc`.
@@ -165,20 +154,21 @@ Persist in `~/.bashrc`.
 ### Zsh
 
 ```zsh
-eval "$(_PWR_COMPLETE=zsh_source pwr)"
+eval "$(_PROMPT_WARRIOR_COMPLETE=zsh_source prompt-warrior)"
 ```
 
 Persist in `~/.zshrc`.
 
-#### uv project
+#### uv project (development mode)
 
-Set it up as follows to get auto-completion without installing `pwr`. Change the actual path to the cloned directory. 
+Set it up as follows to get auto-completion without installing `prompt-warrior`. Change the actual path to the cloned directory. 
 
-The command is still named `pwr` but wraps `uv run`.
+The command is a function named `pwr` and wraps `uv run`.
 
 ```sh
 pwr() {
-  uv run --project /Users/guilhem/Documents/projects/github/prompt_warrior pwr "$@"
+  VIRTUAL_ENV= uv run --project /Users/guilhem/Documents/projects/github/prompt_warrior prompt-warrior "$@"
 }
-eval "$(_PWR_COMPLETE=zsh_source pwr)"
+eval "$(VIRTUAL_ENV= _PROMPT_WARRIOR_COMPLETE=zsh_source pwr)"
+compdef pwr=prompt-warrior
 ```
