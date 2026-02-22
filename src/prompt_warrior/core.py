@@ -373,9 +373,8 @@ def choose_task_stem(
     if parent_task_index is None:
         used_prefixes = {
             prefix
-            for index in top_level_task_indices(document)
-            if (prefix := extract_prefix_from_stem(document.tasks[index].stem))
-            is not None
+            for task in document.tasks
+            if (prefix := extract_prefix_from_stem(task.stem)) is not None
         }
 
         while True:
