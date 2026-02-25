@@ -11,6 +11,7 @@ import click
 
 from .constants import (
     DEFAULT_PROMPTS_DIR,
+    DEFAULT_MAX_FOLDER_TASKS,
     FALLBACK_NEWLINE,
     INDENT_UNIT,
     INDENT_WIDTH,
@@ -25,6 +26,10 @@ from .models import (
     AppContext,
     BulletType,
     CHAR_TO_BULLET,
+    CleanToFoldersBucket,
+    CleanToFoldersMove,
+    CleanToFoldersPlan,
+    CleanToFoldersRewrite,
     InvariantWarning,
     ReferenceKind,
     TaskLine,
@@ -274,6 +279,7 @@ def render_task_line(
     *,
     bullet: BulletType | None = None,
     indent_raw: str | None = None,
+    link_path: str | None = None,
 ) -> str:
     rendered_bullet = BULLET_TO_CHAR[bullet or task.bullet]
     if task.is_correction and (bullet or task.bullet) in {
@@ -282,9 +288,10 @@ def render_task_line(
     }:
         rendered_bullet = f"{rendered_bullet}?"
     rendered_indent = task.indent_raw if indent_raw is None else indent_raw
+    rendered_link_path = task.link_path if link_path is None else link_path
     return (
         f"{rendered_indent}{rendered_bullet}{task.ws_after_bullet}"
-        f"[{task.label}]({task.link_path}){task.newline}"
+        f"[{task.label}]({rendered_link_path}){task.newline}"
     )
 
 
@@ -326,6 +333,85 @@ def extract_prefix_from_stem(stem: str) -> str | None:
         return None
     prefix, _ = stem.split("_", 1)
     return prefix or None
+
+
+def is_standard_task_prefix(prefix: str | None) -> bool:
+    if prefix is None:
+        return False
+    return re.fullmatch(r"(?:[A-Z]|[A-Z][a-z]|[A-Z][a-z][1-9])", prefix) is not None
+
+
+def generated_task_folder_name(prefix: str) -> str:
+    return f"{prefix}_tasks"
+
+
+def normalize_task_folder(folder: Path) -> Path:
+    return Path(".") if str(folder) in {"", "."} else folder
+
+
+def task_folder_for_link_path(link_path: str) -> Path:
+    return normalize_task_folder(Path(link_path).parent)
+
+
+def task_folder_for_line(task: TaskLine) -> Path:
+    return task_folder_for_link_path(task.link_path)
+
+
+def folder_rel_path_to_link(folder: Path) -> str:
+    normalized = normalize_task_folder(folder)
+    if normalized == Path("."):
+        return ""
+    return normalized.as_posix()
+
+
+def validate_folder_name_option(folder_name: str) -> Path:
+    raw = folder_name.strip()
+    if not raw:
+        raise PromptWarriorError("--folder-name cannot be empty.")
+
+    folder = Path(raw)
+    if folder.is_absolute():
+        raise PromptWarriorError("--folder-name must be a relative path.")
+
+    parts = folder.parts
+    if any(part in {"", ".", ".."} for part in parts):
+        raise PromptWarriorError(
+            "--folder-name must be a normalized relative path without '.' or '..'."
+        )
+
+    return normalize_task_folder(folder)
+
+
+def validate_max_folder_tasks(value: int) -> int:
+    if value < 0:
+        raise PromptWarriorError("--max-folder-tasks must be >= 0.")
+    return value
+
+
+def count_tasks_by_folder(document: WorkDocument) -> dict[Path, int]:
+    counts: dict[Path, int] = {}
+    for task in document.tasks:
+        folder = task_folder_for_line(task)
+        counts[folder] = counts.get(folder, 0) + 1
+    return counts
+
+
+def is_generated_task_folder(folder: Path) -> bool:
+    normalized = normalize_task_folder(folder)
+    if normalized == Path(".") or len(normalized.parts) != 1:
+        return False
+    name = normalized.name
+    if not name.endswith("_tasks"):
+        return False
+    prefix = name[: -len("_tasks")]
+    return is_standard_task_prefix(prefix)
+
+
+def build_task_link_path(folder: Path, file_name: str) -> str:
+    normalized = normalize_task_folder(folder)
+    if normalized == Path("."):
+        return file_name
+    return (normalized / file_name).as_posix()
 
 
 def make_safe_ascii_component(value: str) -> str:
@@ -405,6 +491,57 @@ def choose_task_stem(
         if not (app_ctx.prompts_dir / f"{stem}{MARKDOWN_EXTENSION}").exists():
             return stem
         used_child_locals.add(local_prefix)
+
+
+def choose_top_level_add_folder(
+    document: WorkDocument,
+    *,
+    new_task_stem: str,
+    max_folder_tasks: int,
+    folder_name_override: str | None,
+) -> Path:
+    validate_max_folder_tasks(max_folder_tasks)
+
+    if folder_name_override is not None:
+        return validate_folder_name_option(folder_name_override)
+
+    if max_folder_tasks == 0:
+        return Path(".")
+
+    task_counts = count_tasks_by_folder(document)
+    for task_index in reversed(top_level_task_indices(document)):
+        folder = task_folder_for_line(document.tasks[task_index])
+        if not is_generated_task_folder(folder):
+            break
+        if task_counts.get(folder, 0) < max_folder_tasks:
+            return folder
+        break
+
+    prefix = extract_prefix_from_stem(new_task_stem)
+    if prefix is None:
+        raise PromptWarriorError(
+            "Internal error: could not derive task prefix for folder naming."
+        )
+    return Path(generated_task_folder_name(prefix))
+
+
+def choose_add_task_folder(
+    document: WorkDocument,
+    *,
+    parent_task_index: int | None,
+    new_task_stem: str,
+    max_folder_tasks: int = DEFAULT_MAX_FOLDER_TASKS,
+    folder_name_override: str | None = None,
+) -> Path:
+    if parent_task_index is not None:
+        return task_folder_for_line(document.tasks[parent_task_index])
+
+    return choose_top_level_add_folder(
+        document,
+        new_task_stem=new_task_stem,
+        max_folder_tasks=max_folder_tasks,
+        folder_name_override=folder_name_override,
+    )
 
 
 def deepest_active_task_index(document: WorkDocument) -> int | None:
@@ -701,3 +838,193 @@ def siblings_all_done(document: WorkDocument, parent_index: int) -> bool:
         if bullet != BulletType.DONE:
             return False
     return considered_children > 0
+
+
+def _clean_bucket_folder_name(
+    document: WorkDocument,
+    bucket: CleanToFoldersBucket,
+    *,
+    used_folder_names: set[str],
+) -> Path:
+    chosen_prefix: str | None = None
+    for root_task_index in bucket.root_task_indices:
+        prefix = extract_prefix_from_stem(document.tasks[root_task_index].stem)
+        if is_standard_task_prefix(prefix):
+            chosen_prefix = prefix
+            break
+
+    if chosen_prefix is not None:
+        return Path(generated_task_folder_name(chosen_prefix))
+
+    index = 1
+    while True:
+        candidate = f"{index:04d}_tasks"
+        if candidate not in used_folder_names:
+            return Path(candidate)
+        index += 1
+
+
+def _sorted_clean_candidates(document: WorkDocument) -> list[tuple[int, list[int]]]:
+    candidates: list[tuple[int, list[int]]] = []
+    for root_task_index in top_level_task_indices(document):
+        root_task = document.tasks[root_task_index]
+        if task_folder_for_line(root_task) != Path("."):
+            continue
+        candidates.append(
+            (
+                root_task_index,
+                collect_subtree_indices(document, root_task_index),
+            )
+        )
+
+    candidates.sort(
+        key=lambda item: (
+            document.tasks[item[0]].link_path.casefold(),
+            document.tasks[item[0]].line_index,
+        )
+    )
+    return candidates
+
+
+def plan_clean_to_folders(
+    app_ctx: AppContext,
+    document: WorkDocument,
+    *,
+    max_folder_tasks: int = DEFAULT_MAX_FOLDER_TASKS,
+) -> CleanToFoldersPlan:
+    validated_max = validate_max_folder_tasks(max_folder_tasks)
+    plan = CleanToFoldersPlan(max_folder_tasks=validated_max)
+    plan.projected_task_link_paths = {
+        task_index: task.link_path for task_index, task in enumerate(document.tasks)
+    }
+
+    if validated_max == 0:
+        plan.noop_reason = "Foldering disabled by --max-folder-tasks=0."
+        return plan
+
+    candidates = _sorted_clean_candidates(document)
+    if not candidates:
+        plan.noop_reason = "No root-level task files to move."
+        return plan
+
+    buckets: list[CleanToFoldersBucket] = []
+    current_bucket = CleanToFoldersBucket(folder_rel_path=Path("__pending__"))
+
+    for root_task_index, subtree_indices in candidates:
+        subtree_size = len(subtree_indices)
+        if current_bucket.task_indices and (
+            current_bucket.task_count + subtree_size > validated_max
+        ):
+            buckets.append(current_bucket)
+            current_bucket = CleanToFoldersBucket(folder_rel_path=Path("__pending__"))
+
+        current_bucket.root_task_indices.append(root_task_index)
+        current_bucket.task_indices.extend(subtree_indices)
+        current_bucket.task_count += subtree_size
+
+    if current_bucket.task_indices:
+        buckets.append(current_bucket)
+
+    existing_folder_names = (
+        {path.name for path in app_ctx.prompts_dir.iterdir() if path.is_dir()}
+        if app_ctx.prompts_dir.exists()
+        else set()
+    )
+    used_folder_names = set(existing_folder_names)
+    assigned_bucket_folders: set[Path] = set()
+
+    for bucket in buckets:
+        folder_rel_path = _clean_bucket_folder_name(
+            document,
+            bucket,
+            used_folder_names=used_folder_names,
+        )
+        bucket.folder_rel_path = folder_rel_path
+        used_folder_names.add(folder_rel_path.name)
+        assigned_bucket_folders.add(folder_rel_path)
+
+    destination_abs_paths: set[Path] = set()
+
+    for bucket in buckets:
+        for task_index in bucket.task_indices:
+            task = document.tasks[task_index]
+            source_rel_path = Path(task.link_path)
+            destination_rel_path = bucket.folder_rel_path / source_rel_path.name
+            move = CleanToFoldersMove(
+                task_index=task_index,
+                source_rel_path=source_rel_path,
+                destination_rel_path=destination_rel_path,
+            )
+            plan.moves.append(move)
+
+            rewrite = CleanToFoldersRewrite(
+                task_index=task_index,
+                line_index=task.line_index,
+                old_link_path=task.link_path,
+                new_link_path=destination_rel_path.as_posix(),
+            )
+            plan.rewrites.append(rewrite)
+            plan.projected_task_link_paths[task_index] = rewrite.new_link_path
+
+    for move in plan.moves:
+        source_abs_path = app_ctx.prompts_dir / move.source_rel_path
+        destination_abs_path = app_ctx.prompts_dir / move.destination_rel_path
+
+        if not source_abs_path.exists():
+            raise PromptWarriorError(f"Task file does not exist: {source_abs_path}")
+        if destination_abs_path in destination_abs_paths:
+            raise PromptWarriorError(
+                f"Internal error: duplicate move destination {destination_abs_path}"
+            )
+        destination_abs_paths.add(destination_abs_path)
+
+        destination_parent = destination_abs_path.parent
+        if destination_parent.exists() and not destination_parent.is_dir():
+            raise PromptWarriorError(
+                "Destination parent exists but is not a directory: "
+                f"{destination_parent}"
+            )
+        if destination_abs_path.exists():
+            raise PromptWarriorError(
+                f"Destination file already exists: {destination_abs_path}"
+            )
+
+    plan.buckets = buckets
+    plan.rewrites.sort(key=lambda rewrite: rewrite.line_index)
+    plan.created_folder_rel_paths = sorted(
+        {
+            bucket.folder_rel_path
+            for bucket in buckets
+            if not (app_ctx.prompts_dir / bucket.folder_rel_path).exists()
+        },
+        key=lambda path: (len(path.parts), path.as_posix().casefold()),
+    )
+    return plan
+
+
+def apply_clean_to_folders_plan(
+    app_ctx: AppContext,
+    document: WorkDocument,
+    work_path: Path,
+    plan: CleanToFoldersPlan,
+) -> None:
+    if plan.noop_reason is not None or not plan.moves:
+        return
+
+    for folder_rel_path in plan.created_folder_rel_paths:
+        (app_ctx.prompts_dir / folder_rel_path).mkdir(parents=True, exist_ok=True)
+
+    for move in plan.moves:
+        source_abs_path = app_ctx.prompts_dir / move.source_rel_path
+        destination_abs_path = app_ctx.prompts_dir / move.destination_rel_path
+        source_abs_path.rename(destination_abs_path)
+
+    lines = list(document.lines)
+    for rewrite in plan.rewrites:
+        task = document.tasks[rewrite.task_index]
+        lines[rewrite.line_index] = render_task_line(
+            task,
+            link_path=rewrite.new_link_path,
+        )
+
+    write_work_lines(work_path, lines)

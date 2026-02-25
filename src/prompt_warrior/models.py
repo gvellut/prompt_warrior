@@ -113,3 +113,37 @@ class TaskSignature:
     link_path: str
     label: str
     indent_expanded: int
+
+
+@define
+class CleanToFoldersMove:
+    task_index: int
+    source_rel_path: Path
+    destination_rel_path: Path
+
+
+@define
+class CleanToFoldersRewrite:
+    task_index: int
+    line_index: int
+    old_link_path: str
+    new_link_path: str
+
+
+@define
+class CleanToFoldersBucket:
+    folder_rel_path: Path
+    root_task_indices: list[int] = field(factory=list)
+    task_indices: list[int] = field(factory=list)
+    task_count: int = 0
+
+
+@define
+class CleanToFoldersPlan:
+    max_folder_tasks: int
+    buckets: list[CleanToFoldersBucket] = field(factory=list)
+    moves: list[CleanToFoldersMove] = field(factory=list)
+    rewrites: list[CleanToFoldersRewrite] = field(factory=list)
+    created_folder_rel_paths: list[Path] = field(factory=list)
+    projected_task_link_paths: dict[int, str] = field(factory=dict)
+    noop_reason: str | None = None

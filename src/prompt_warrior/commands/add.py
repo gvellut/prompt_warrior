@@ -8,14 +8,19 @@ from prompt_warrior.cli_params import (
     shell_complete_subtask_reference,
 )
 from prompt_warrior.constants import (
+    DEFAULT_MAX_FOLDER_TASKS,
     MARKDOWN_EXTENSION,
     PWAR_AGENT,
     PWAR_CORR,
     PWAR_FILENAME,
+    PWAR_FOLDER_NAME,
+    PWAR_MAX_FOLDER_TASKS,
     PWAR_SUB,
     PWAR_TOP,
 )
 from prompt_warrior.core import (
+    build_task_link_path,
+    choose_add_task_folder,
     choose_task_stem,
     deepest_active_task_index,
     ensure_insert_separation,
@@ -62,6 +67,21 @@ from prompt_warrior.rich_error import RichErrorCommand
     help="Create as planned subtask under TASK_REF.",
 )
 @click.option(
+    "--max-folder-tasks",
+    type=int,
+    default=DEFAULT_MAX_FOLDER_TASKS,
+    show_default=True,
+    envvar=PWAR_MAX_FOLDER_TASKS,
+    help=(
+        "Max task files per auto-generated folder. Use 0 to keep files at prompts root."
+    ),
+)
+@click.option(
+    "--folder-name",
+    envvar=PWAR_FOLDER_NAME,
+    help="Relative folder for new top-level task files (multiple levels allowed).",
+)
+@click.option(
     "-c",
     "--corr",
     is_flag=True,
@@ -83,16 +103,20 @@ def add(
     filename: str | None,
     top: bool,
     sub_reference: str | None,
+    max_folder_tasks: int,
+    folder_name: str | None,
     corr: bool,
     agent_mode: bool,
 ) -> None:
     app_ctx.logger.debug(
         "Running add with label_words=%s filename=%s top=%s "
-        "sub_reference=%s corr=%s agent_mode=%s",
+        "sub_reference=%s max_folder_tasks=%s folder_name=%s corr=%s agent_mode=%s",
         label_words,
         filename,
         top,
         sub_reference,
+        max_folder_tasks,
+        folder_name,
         corr,
         agent_mode,
     )
@@ -169,11 +193,23 @@ def add(
         label_component=label_component,
     )
     file_name = f"{stem}{MARKDOWN_EXTENSION}"
-    task_path = app_ctx.prompts_dir / file_name
+    target_folder = choose_add_task_folder(
+        document,
+        parent_task_index=parent_task_index,
+        new_task_stem=stem,
+        max_folder_tasks=max_folder_tasks,
+        folder_name_override=folder_name,
+    )
+    task_link_path = build_task_link_path(target_folder, file_name)
+    task_path = app_ctx.prompts_dir / task_link_path
+    task_path.parent.mkdir(parents=True, exist_ok=True)
+    if task_path.exists():
+        raise PromptWarriorError(f"Task file already exists: {task_path}")
     task_path.write_text("", encoding="utf-8")
 
     new_line = (
-        f"{indent_raw}{BULLET_TO_CHAR[bullet]} [{label}]({file_name}){document.newline}"
+        f"{indent_raw}{BULLET_TO_CHAR[bullet]} [{label}]({task_link_path})"
+        f"{document.newline}"
     )
     lines = list(document.lines)
     ensure_insert_separation(lines, insert_at, document.newline)
@@ -181,4 +217,4 @@ def add(
 
     write_work_lines(work_path, lines)
     app_ctx.console.print(f"Added task: {label}", style="success")
-    app_ctx.console.print(f"Created file: {file_name}", style="highlight")
+    app_ctx.console.print(f"Created file: {task_link_path}", style="highlight")

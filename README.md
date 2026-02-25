@@ -41,6 +41,8 @@ Options:
 - `-l, --filename TEXT`: safe-ASCII filename stem override
 - `-t, --top`: add at top of top-level list
 - `-s, --sub TASK_REF`: add as planned child (`-`) under parent task
+- `--max-folder-tasks INTEGER`: max files per auto-generated folder (default `12`), `0` disables folders
+- `--folder-name PATH`: place a new top-level task file in a specific relative folder
 - `-c, --corr`: add as correction child (`?`) under deepest active task
 - `-a, --agent`: add as agent child (`~`) under deepest active task
 
@@ -96,6 +98,18 @@ Default behavior:
 Options:
 - `--keep-children`: remove only target task; promote direct children to target level; keep child files
 
+### `clean-to-folders`
+Move current root-level task files into generated folders and rewrite links in `__plan.md`.
+
+Rules:
+- Groups by top-level task subtree (top-level task + descendants stay together)
+- Packs folders in alphabetical order of top-level task link path
+- Uses generated folder names like `<prefix>_tasks`
+
+Options:
+- `--max-folder-tasks INTEGER`: max files per generated folder (default `12`), `0` makes it a no-op
+- `--dry-run`: print the projected task-file tree and summary without changing files
+
 ## Task references
 
 A task reference can be:
@@ -121,8 +135,12 @@ Resolution order: stem, then prefix, then planned index.
 | `add --filename` | `PWAR_FILENAME` |
 | `add --top` | `PWAR_TOP` |
 | `add --sub` | `PWAR_SUB` |
+| `add --max-folder-tasks` | `PWAR_MAX_FOLDER_TASKS` |
+| `add --folder-name` | `PWAR_FOLDER_NAME` |
 | `add --corr` | `PWAR_CORR` |
 | `add --agent` | `PWAR_AGENT` |
+| `clean-to-folders --max-folder-tasks` | `PWAR_MAX_FOLDER_TASKS` |
+| `clean-to-folders --dry-run` | `PWAR_CLEAN_TO_FOLDERS_DRY_RUN` |
 | `done --recursive` | `PWAR_RECURSIVE` |
 | `commit --commit-command` | `PWAR_COMMIT_COMMAND` |
 | `commit --add-all-command` | `PWAR_ADD_ALL_COMMAND` |

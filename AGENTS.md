@@ -20,3 +20,4 @@ Always run `ruff format` at the end before returning to the user.
 ## Python
 
 Use relative imports for the same module or below ie with a single '.'. Never use '..' : Always use the absolute import then.
+Do not use dataclasses. Always use attrs and @define.
