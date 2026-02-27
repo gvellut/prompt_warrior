@@ -54,6 +54,10 @@ Selection rules:
 - Otherwise: activate first top-level `-` or `?`
 - If no active task exists: activate first top-level `-` or `?`
 
+Options:
+- `--branch`: also copy and print a branch command for the activated task
+- `--branch-command TEXT`: command prefix for the branch command (default `gsw -c`)
+
 ### `read`
 Copy the deepest active task content to the clipboard without changing task status.
 
@@ -142,6 +146,8 @@ Resolution order: stem, then prefix, then planned index.
 | `clean-to-folders --max-folder-tasks` | `PWAR_MAX_FOLDER_TASKS` |
 | `clean-to-folders --dry-run` | `PWAR_CLEAN_TO_FOLDERS_DRY_RUN` |
 | `done --recursive` | `PWAR_RECURSIVE` |
+| `next --branch` | `PWAR_BRANCH` |
+| `next --branch-command` | `PWAR_BRANCH_COMMAND` |
 | `commit --commit-command` | `PWAR_COMMIT_COMMAND` |
 | `commit --add-all-command` | `PWAR_ADD_ALL_COMMAND` |
 | `commit --no-done` | `PWAR_NO_DONE` |

@@ -3,8 +3,14 @@ from __future__ import annotations
 import builtins
 
 import click
+from rich.text import Text
 
 from prompt_warrior.cli_params import pass_app_context
+from prompt_warrior.constants import (
+    DEFAULT_BRANCH_COMMAND,
+    PWAR_BRANCH,
+    PWAR_BRANCH_COMMAND,
+)
 from prompt_warrior.core import (
     child_task_indices,
     copy_task_content,
@@ -23,9 +29,26 @@ from prompt_warrior.rich_error import RichErrorCommand
     cls=RichErrorCommand,
     help="Activate the next task and copy its markdown file content to the clipboard.",
 )
+@click.option(
+    "--branch",
+    is_flag=True,
+    envvar=PWAR_BRANCH,
+    help="Also copy and print a branch command for the activated task.",
+)
+@click.option(
+    "--branch-command",
+    default=DEFAULT_BRANCH_COMMAND,
+    show_default=True,
+    envvar=PWAR_BRANCH_COMMAND,
+    help="Command prefix used for the branch command.",
+)
 @pass_app_context
-def next_task(app_ctx: AppContext) -> None:
-    app_ctx.logger.debug("Running next")
+def next_task(app_ctx: AppContext, branch: bool, branch_command: str) -> None:
+    app_ctx.logger.debug(
+        "Running next with branch=%s branch_command=%s",
+        branch,
+        branch_command,
+    )
     work_path, document = load_document_for_command(app_ctx)
 
     deepest_active = deepest_active_task_index(document)
@@ -67,6 +90,16 @@ def next_task(app_ctx: AppContext) -> None:
 
     task = document.tasks[next_candidate]
     task_path = copy_task_content(app_ctx, task)
+    branch_line: Text | None = None
+    if branch:
+        normalized_branch_command = branch_command.strip()
+        if not normalized_branch_command:
+            raise PromptWarriorError("--branch-command cannot be empty.")
+        app_ctx.clipboard.copy(f"{normalized_branch_command} {task.stem}")
+        branch_line = Text()
+        branch_line.append(normalized_branch_command, style="highlight")
+        branch_line.append(" ")
+        branch_line.append(task.stem, style="success")
 
     lines = list(document.lines)
     lines[task.line_index] = render_task_line(task, bullet=BulletType.ACTIVE)
@@ -77,3 +110,5 @@ def next_task(app_ctx: AppContext) -> None:
         f"Copied task content from {task_path.name}",
         style="highlight",
     )
+    if branch_line is not None:
+        app_ctx.console.print(branch_line)
