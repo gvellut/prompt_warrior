@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import builtins
+import time
 
 import click
 from rich.text import Text
@@ -8,8 +9,10 @@ from rich.text import Text
 from prompt_warrior.cli_params import pass_app_context
 from prompt_warrior.constants import (
     DEFAULT_BRANCH_COMMAND,
+    DEFAULT_BRANCH_COPY_INTERVAL,
     PWAR_BRANCH,
     PWAR_BRANCH_COMMAND,
+    PWAR_BRANCH_COPY_INTERVAL,
 )
 from prompt_warrior.core import (
     child_task_indices,
@@ -42,12 +45,26 @@ from prompt_warrior.rich_error import RichErrorCommand
     envvar=PWAR_BRANCH_COMMAND,
     help="Command prefix used for the branch command.",
 )
+@click.option(
+    "--branch-copy-interval",
+    type=int,
+    default=DEFAULT_BRANCH_COPY_INTERVAL,
+    show_default=True,
+    envvar=PWAR_BRANCH_COPY_INTERVAL,
+    help="Delay before branch-command clipboard copy, in 100ms units.",
+)
 @pass_app_context
-def next_task(app_ctx: AppContext, branch: bool, branch_command: str) -> None:
+def next_task(
+    app_ctx: AppContext,
+    branch: bool,
+    branch_command: str,
+    branch_copy_interval: int,
+) -> None:
     app_ctx.logger.debug(
-        "Running next with branch=%s branch_command=%s",
+        "Running next with branch=%s branch_command=%s branch_copy_interval=%s",
         branch,
         branch_command,
+        branch_copy_interval,
     )
     work_path, document = load_document_for_command(app_ctx)
 
@@ -95,6 +112,9 @@ def next_task(app_ctx: AppContext, branch: bool, branch_command: str) -> None:
         normalized_branch_command = branch_command.strip()
         if not normalized_branch_command:
             raise PromptWarriorError("--branch-command cannot be empty.")
+        if branch_copy_interval < 0:
+            raise PromptWarriorError("--branch-copy-interval must be >= 0.")
+        time.sleep(branch_copy_interval / 10)
         app_ctx.clipboard.copy(f"{normalized_branch_command} {task.stem}")
         branch_line = Text()
         branch_line.append(normalized_branch_command, style="highlight")

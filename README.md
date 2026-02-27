@@ -57,6 +57,7 @@ Selection rules:
 Options:
 - `--branch`: also copy and print a branch command for the activated task
 - `--branch-command TEXT`: command prefix for the branch command (default `gsw -c`)
+- `--branch-copy-interval INTEGER`: delay before branch-command clipboard copy in 100ms units (default `6`)
 
 ### `read`
 Copy the deepest active task content to the clipboard without changing task status.
@@ -148,6 +149,7 @@ Resolution order: stem, then prefix, then planned index.
 | `done --recursive` | `PWAR_RECURSIVE` |
 | `next --branch` | `PWAR_BRANCH` |
 | `next --branch-command` | `PWAR_BRANCH_COMMAND` |
+| `next --branch-copy-interval` | `PWAR_BRANCH_COPY_INTERVAL` |
 | `commit --commit-command` | `PWAR_COMMIT_COMMAND` |
 | `commit --add-all-command` | `PWAR_ADD_ALL_COMMAND` |
 | `commit --no-done` | `PWAR_NO_DONE` |

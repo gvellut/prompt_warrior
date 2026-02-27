@@ -1,0 +1,2 @@
+Before the second copy (branching), add a timer sleep : by default 600ms
+Add a --branch-copy-interval option (also settable with envvar) to control that timer : it will be in units of 100ms : so 6 by default
