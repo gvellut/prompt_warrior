@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from functools import lru_cache
+from pathlib import Path
 import re
 import shlex
 import string
 import unicodedata
-from collections.abc import Iterator
-from pathlib import Path
 
 import click
 
 from .constants import (
-    DEFAULT_PROMPTS_DIR,
     DEFAULT_MAX_FOLDER_TASKS,
+    DEFAULT_PROMPTS_DIR,
     FALLBACK_NEWLINE,
     INDENT_UNIT,
     INDENT_WIDTH,
@@ -22,10 +23,11 @@ from .constants import (
 )
 from .errors import ParseIssue, PromptWarriorError
 from .models import (
+    BULLET_TO_CHAR,
+    CHAR_TO_BULLET,
     AddMode,
     AppContext,
     BulletType,
-    CHAR_TO_BULLET,
     CleanToFoldersBucket,
     CleanToFoldersMove,
     CleanToFoldersPlan,
@@ -36,7 +38,6 @@ from .models import (
     TaskReferenceResolution,
     TaskSignature,
     WorkDocument,
-    BULLET_TO_CHAR,
 )
 
 
@@ -435,6 +436,17 @@ def iter_prefix_candidates() -> Iterator[str]:
         for lower in string.ascii_lowercase:
             for upper in string.ascii_uppercase:
                 yield f"{upper}{lower}{number}"
+
+
+@lru_cache(maxsize=1)
+def _prefix_order_lookup() -> dict[str, int]:
+    return {prefix: index for index, prefix in enumerate(iter_prefix_candidates())}
+
+
+def standard_prefix_order(prefix: str | None) -> int | None:
+    if not is_standard_task_prefix(prefix):
+        return None
+    return _prefix_order_lookup()[prefix]
 
 
 def choose_unused_prefix(used_prefixes: set[str]) -> str:
@@ -879,6 +891,15 @@ def _sorted_clean_candidates(document: WorkDocument) -> list[tuple[int, list[int
 
     candidates.sort(
         key=lambda item: (
+            (0, prefix_rank)
+            if (
+                prefix_rank := standard_prefix_order(
+                    extract_prefix_from_stem(document.tasks[item[0]].stem)
+                )
+            )
+            is not None
+            else (1, 0),
+            document.tasks[item[0]].stem.casefold(),
             document.tasks[item[0]].link_path.casefold(),
             document.tasks[item[0]].line_index,
         )
@@ -991,13 +1012,12 @@ def plan_clean_to_folders(
 
     plan.buckets = buckets
     plan.rewrites.sort(key=lambda rewrite: rewrite.line_index)
-    plan.created_folder_rel_paths = sorted(
-        {
+    plan.created_folder_rel_paths = list(
+        dict.fromkeys(
             bucket.folder_rel_path
             for bucket in buckets
             if not (app_ctx.prompts_dir / bucket.folder_rel_path).exists()
-        },
-        key=lambda path: (len(path.parts), path.as_posix().casefold()),
+        )
     )
     return plan
 

@@ -1,0 +1,3 @@
+For clean-to-folders, change the order : you use alphabetical order for the prefixes. As in B comes after Aa.
+But when generating the names : The prefixes are generated like iter_prefix_candidates in src/prompt_warrior/core.py so Aa comes after B for example.
+Change the order so that the tasks are ordered using that pecial ordering and the folder bucket they are in follow that. For example : if the tasks have all the prefixes from A to Z then Aa to Ea : the Aa should not in the A_ folder (since it does not come immediately after A) but a later one that reflects its ordering.

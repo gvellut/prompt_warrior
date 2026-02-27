@@ -12,3 +12,4 @@
 ! [Some refinements](A_tasks/I_Some_refinements.md)
 ! [correct letter assignment](J_tasks/J_correct_letter_assignment.md)
 ! [Folders](J_tasks/K_Folders.md)
+! [Change order](J_tasks/L_Change_order.md)
