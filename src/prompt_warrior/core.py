@@ -521,13 +521,14 @@ def choose_top_level_add_folder(
         return Path(".")
 
     task_counts = count_tasks_by_folder(document)
-    for task_index in reversed(top_level_task_indices(document)):
-        folder = task_folder_for_line(document.tasks[task_index])
-        if not is_generated_task_folder(folder):
-            break
-        if task_counts.get(folder, 0) < max_folder_tasks:
+    ordered_top_level = _sorted_top_level_task_indices_for_foldering(document)
+    if ordered_top_level:
+        last_top_level_index = ordered_top_level[-1]
+        folder = task_folder_for_line(document.tasks[last_top_level_index])
+        if is_generated_task_folder(folder) and (
+            task_counts.get(folder, 0) < max_folder_tasks
+        ):
             return folder
-        break
 
     prefix = extract_prefix_from_stem(new_task_stem)
     if prefix is None:
@@ -878,7 +879,7 @@ def _clean_bucket_folder_name(
 
 def _sorted_clean_candidates(document: WorkDocument) -> list[tuple[int, list[int]]]:
     candidates: list[tuple[int, list[int]]] = []
-    for root_task_index in top_level_task_indices(document):
+    for root_task_index in _sorted_top_level_task_indices_for_foldering(document):
         root_task = document.tasks[root_task_index]
         if task_folder_for_line(root_task) != Path("."):
             continue
@@ -889,22 +890,25 @@ def _sorted_clean_candidates(document: WorkDocument) -> list[tuple[int, list[int
             )
         )
 
-    candidates.sort(
-        key=lambda item: (
-            (0, prefix_rank)
-            if (
-                prefix_rank := standard_prefix_order(
-                    extract_prefix_from_stem(document.tasks[item[0]].stem)
-                )
-            )
-            is not None
-            else (1, 0),
-            document.tasks[item[0]].stem.casefold(),
-            document.tasks[item[0]].link_path.casefold(),
-            document.tasks[item[0]].line_index,
-        )
-    )
     return candidates
+
+
+def _task_foldering_order_key(task: TaskLine) -> tuple[tuple[int, int], str, str, int]:
+    return (
+        (0, prefix_rank)
+        if (prefix_rank := standard_prefix_order(extract_prefix_from_stem(task.stem)))
+        is not None
+        else (1, 0),
+        task.stem.casefold(),
+        task.link_path.casefold(),
+        task.line_index,
+    )
+
+
+def _sorted_top_level_task_indices_for_foldering(document: WorkDocument) -> list[int]:
+    indices = top_level_task_indices(document)
+    indices.sort(key=lambda index: _task_foldering_order_key(document.tasks[index]))
+    return indices
 
 
 def plan_clean_to_folders(
