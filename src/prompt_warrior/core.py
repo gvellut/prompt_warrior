@@ -522,9 +522,15 @@ def choose_top_level_add_folder(
 
     task_counts = count_tasks_by_folder(document)
     ordered_top_level = _sorted_top_level_task_indices_for_foldering(document)
-    if ordered_top_level:
-        last_top_level_index = ordered_top_level[-1]
-        folder = task_folder_for_line(document.tasks[last_top_level_index])
+    last_standard_index: int | None = None
+    for task_index in reversed(ordered_top_level):
+        prefix = extract_prefix_from_stem(document.tasks[task_index].stem)
+        if standard_prefix_order(prefix) is not None:
+            last_standard_index = task_index
+            break
+
+    if last_standard_index is not None:
+        folder = task_folder_for_line(document.tasks[last_standard_index])
         if is_generated_task_folder(folder) and (
             task_counts.get(folder, 0) < max_folder_tasks
         ):
