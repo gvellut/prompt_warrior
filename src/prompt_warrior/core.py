@@ -667,6 +667,10 @@ def insertion_point_for_new_task(
         else:
             indent_raw = f"{parent.indent_raw}{INDENT_UNIT}"
 
+        if top and parent.child_task_indices:
+            first_child_index = parent.child_task_indices[0]
+            return document.tasks[first_child_index].line_index, indent_raw
+
         return block_end_line_index(document, parent_task_index), indent_raw
 
     top_level_indices = top_level_task_indices(document)

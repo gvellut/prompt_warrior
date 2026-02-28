@@ -1,0 +1,1 @@
+Add a --top flag for add command : when set, the new task will be first in the list of tasks (either the top list : then first in plan md ; or first in the list below determined or given parent)

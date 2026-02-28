@@ -39,7 +39,7 @@ Create a task markdown file and add its line to `__plan.md`.
 
 Options:
 - `-l, --filename TEXT`: safe-ASCII filename stem override
-- `-t, --top`: add at top of top-level list
+- `-t, --top`: add at top of target sibling list (top-level or selected parent)
 - `-s, --sub TASK_REF`: add as planned child (`-`) under parent task
 - `--max-folder-tasks INTEGER`: max files per auto-generated folder (default `12`), `0` disables folders
 - `--folder-name PATH`: place a new top-level task file in a specific relative folder

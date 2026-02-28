@@ -55,7 +55,7 @@ from prompt_warrior.rich_error import RichErrorCommand
     "--top",
     is_flag=True,
     envvar=PWAR_TOP,
-    help="Insert new planned task at the top of top-level tasks.",
+    help="Insert new task at top of target list (top-level or selected parent).",
 )
 @click.option(
     "-s",
@@ -129,11 +129,6 @@ def add(
     mode_count = int(sub_reference is not None) + int(corr) + int(agent_mode)
     if mode_count > 1:
         raise PromptWarriorError("Use only one of --sub, --corr, or --agent.")
-
-    if top and mode_count > 0:
-        raise PromptWarriorError(
-            "--top cannot be combined with --sub, --corr, or --agent."
-        )
 
     label = " ".join(label_words).strip()
     if not label:
