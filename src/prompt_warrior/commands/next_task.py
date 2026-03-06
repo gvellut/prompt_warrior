@@ -130,7 +130,7 @@ def next_task(
         f"Activated task: {task_display_path(task.link_path)}", style="success"
     )
     app_ctx.console.print(
-        f"Copied task content from {task_path.name}",
+        "Copied task content.",
         style="highlight",
     )
     if branch_line is not None:
