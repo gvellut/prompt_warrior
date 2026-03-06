@@ -18,3 +18,5 @@
 ! [Correct last](J_tasks/N_Correct_last.md)
 ! [Top arg for add](J_tasks/O_Top_arg_for_add.md)
 ! [Folder not fixed](J_tasks/P_Folder_not_fixed.md)
+! [init Task use folder](J_tasks/N_init_Task_use_folder.md)
+! [Full path of task everywhere](J_tasks/O_Full_path_of_task_everywhere.md)

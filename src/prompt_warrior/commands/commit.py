@@ -84,7 +84,7 @@ def commit(
     if no_done:
         return
 
-    closed_count, shallowest_depth, remaining_tasks_in_scope = (
+    closed_count, shallowest_depth, remaining_tasks_in_scope, initial_link_path = (
         close_deepest_active_task(
             work_path=work_path,
             document=document,
@@ -96,4 +96,5 @@ def commit(
         closed_count,
         shallowest_depth,
         remaining_tasks_in_scope,
+        initial_link_path,
     )

@@ -20,6 +20,7 @@ from prompt_warrior.core import (
     deepest_active_task_index,
     load_document_for_command,
     render_task_line,
+    task_display_path,
     write_work_lines,
 )
 from prompt_warrior.errors import PromptWarriorError
@@ -125,7 +126,9 @@ def next_task(
     lines[task.line_index] = render_task_line(task, bullet=BulletType.ACTIVE)
     write_work_lines(work_path, lines)
 
-    app_ctx.console.print(f"Activated task: {task.label}", style="success")
+    app_ctx.console.print(
+        f"Activated task: {task_display_path(task.link_path)}", style="success"
+    )
     app_ctx.console.print(
         f"Copied task content from {task_path.name}",
         style="highlight",

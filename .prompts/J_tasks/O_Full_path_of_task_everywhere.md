@@ -1,0 +1,3 @@
+When doing an init : I want the printed out task to have the complete path (relative to .prompts) instead of its suffix ie by default it shows just Initialization => not correct : I want A_tasks/A_Initialization (and similar if task name was given, not just the default)
+Review every command that prints out a task :  add (-c -sub - agent) + next + commit ... : must print the full path (relative to .prompts)
+Also when doing commit or done : print the task path (relative to .prompts) : Marked 1 task(s) as done starting with .... (ie  the task that is relevant for done / commit).

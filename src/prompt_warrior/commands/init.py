@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import click
 
 from prompt_warrior.cli_params import pass_app_context
@@ -12,9 +14,12 @@ from prompt_warrior.constants import (
     WORK_FILENAME,
 )
 from prompt_warrior.core import (
+    build_task_link_path,
     choose_unused_prefix,
     compose_stem,
+    generated_task_folder_name,
     make_safe_ascii_component,
+    task_display_path,
 )
 from prompt_warrior.errors import PromptWarriorError
 from prompt_warrior.models import AppContext
@@ -68,12 +73,20 @@ def init(app_ctx: AppContext, no_init_task: bool, init_task_label: str) -> None:
     prefix = choose_unused_prefix(set())
     stem = compose_stem(prefix, safe_component)
     file_name = f"{stem}{MARKDOWN_EXTENSION}"
+    task_link_path = build_task_link_path(
+        Path(generated_task_folder_name(prefix)),
+        file_name,
+    )
+    task_path = prompts_dir / task_link_path
 
-    (prompts_dir / file_name).write_text("", encoding="utf-8")
+    task_path.parent.mkdir(parents=True, exist_ok=True)
+    task_path.write_text("", encoding="utf-8")
     work_path.write_text(
-        f"- [{label}]({file_name}){FALLBACK_NEWLINE}",
+        f"- [{label}]({task_link_path}){FALLBACK_NEWLINE}",
         encoding="utf-8",
     )
 
     app_ctx.console.print(f"Initialized workspace at {prompts_dir}", style="success")
-    app_ctx.console.print(f"Created initial task: {label}", style="highlight")
+    app_ctx.console.print(
+        f"Created initial task: {task_display_path(task_link_path)}", style="highlight"
+    )

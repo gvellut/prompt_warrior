@@ -28,6 +28,7 @@ from prompt_warrior.core import (
     load_document_for_command,
     make_safe_ascii_component,
     resolve_reference,
+    task_display_path,
     write_work_lines,
 )
 from prompt_warrior.errors import PromptWarriorError
@@ -211,5 +212,6 @@ def add(
     lines.insert(insert_at, new_line)
 
     write_work_lines(work_path, lines)
-    app_ctx.console.print(f"Added task: {label}", style="success")
-    app_ctx.console.print(f"Created file: {task_link_path}", style="highlight")
+    app_ctx.console.print(
+        f"Added task: {task_display_path(task_link_path)}", style="success"
+    )

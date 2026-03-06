@@ -15,6 +15,7 @@ from prompt_warrior.core import (
     parse_work_lines,
     remaining_relevant_siblings_count,
     siblings_all_done,
+    task_display_path,
     task_signature,
     write_work_lines,
 )
@@ -27,12 +28,13 @@ def close_deepest_active_task(
     work_path: Path,
     document: WorkDocument,
     recursive: bool,
-) -> tuple[int, int, int]:
+) -> tuple[int, int, int, str]:
     current_task_index = deepest_active_task_index(document)
     if current_task_index is None:
         raise PromptWarriorError("No active task found to close.")
 
     current_task = document.tasks[current_task_index]
+    initial_link_path = current_task.link_path
     current_signature = task_signature(current_task)
     shallowest_signature = current_signature
     shallowest_depth = current_task.depth
@@ -95,7 +97,7 @@ def close_deepest_active_task(
     )
 
     write_work_lines(work_path, lines)
-    return closed_count, shallowest_depth, remaining_tasks_in_scope
+    return closed_count, shallowest_depth, remaining_tasks_in_scope, initial_link_path
 
 
 def format_level_name(depth: int) -> str:
@@ -109,8 +111,13 @@ def print_close_result(
     closed_count: int,
     shallowest_depth: int,
     remaining_tasks_in_scope: int,
+    initial_link_path: str,
 ) -> None:
-    app_ctx.console.print(f"Marked {closed_count} task(s) as done.", style="success")
+    display_path = task_display_path(initial_link_path)
+    app_ctx.console.print(
+        f"Marked {closed_count} task(s) as done starting with {display_path}.",
+        style="success",
+    )
     level_name = format_level_name(shallowest_depth)
     if remaining_tasks_in_scope == 0:
         app_ctx.console.print(
@@ -148,7 +155,7 @@ def option_recursive(function: Callable[..., object]) -> Callable[..., object]:
 def done(app_ctx: AppContext, recursive: bool) -> None:
     app_ctx.logger.debug("Running done with recursive=%s", recursive)
     work_path, document = load_document_for_command(app_ctx)
-    closed_count, shallowest_depth, remaining_tasks_in_scope = (
+    closed_count, shallowest_depth, remaining_tasks_in_scope, initial_link_path = (
         close_deepest_active_task(
             work_path=work_path,
             document=document,
@@ -160,4 +167,5 @@ def done(app_ctx: AppContext, recursive: bool) -> None:
         closed_count,
         shallowest_depth,
         remaining_tasks_in_scope,
+        initial_link_path,
     )

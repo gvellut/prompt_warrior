@@ -705,6 +705,10 @@ def insertion_point_for_new_task(
     return len(document.lines), ""
 
 
+def task_display_path(link_path: str) -> str:
+    return Path(link_path).with_suffix("").as_posix()
+
+
 def resolve_task_path(app_ctx: AppContext, link_path: str) -> Path:
     task_path = Path(link_path)
     if task_path.is_absolute():
