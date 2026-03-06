@@ -28,6 +28,7 @@ def read(app_ctx: AppContext) -> None:
 
     task = document.tasks[current_task_index]
     app_ctx.console.print(
-        f"Copied task content from {task_display_path(task.link_path)}",
+        "Copied task content from"
+        f" [success]{task_display_path(task.link_path)}[/success]",
         style="highlight",
     )

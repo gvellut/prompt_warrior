@@ -107,7 +107,7 @@ def next_task(
         raise PromptWarriorError("No remaining '-' or '?' top-level task to activate.")
 
     task = document.tasks[next_candidate]
-    task_path = copy_task_content(app_ctx, task)
+    copy_task_content(app_ctx, task)
     branch_line: Text | None = None
     if branch:
         normalized_branch_command = branch_command.strip()
@@ -127,7 +127,8 @@ def next_task(
     write_work_lines(work_path, lines)
 
     app_ctx.console.print(
-        f"Activated task: {task_display_path(task.link_path)}", style="success"
+        f"Activated task: [highlight]{task_display_path(task.link_path)}[/highlight]",
+        style="success",
     )
     app_ctx.console.print(
         "Copied task content.",

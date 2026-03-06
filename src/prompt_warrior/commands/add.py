@@ -213,5 +213,6 @@ def add(
 
     write_work_lines(work_path, lines)
     app_ctx.console.print(
-        f"Added task: {task_display_path(task_link_path)}", style="success"
+        f"Added task: [highlight]{task_display_path(task_link_path)}[/highlight]",
+        style="success",
     )

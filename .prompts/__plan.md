@@ -20,3 +20,4 @@
 ! [Folder not fixed](J_tasks/P_Folder_not_fixed.md)
 ! [init Task use folder](J_tasks/N_init_Task_use_folder.md)
 ! [Full path of task everywhere](J_tasks/O_Full_path_of_task_everywhere.md)
+! [Different style for path](J_tasks/Q_Different_style_for_path.md)

@@ -1,0 +1,2 @@
+Look at all the commands and whenever there is task name or task path (relative to .prompts), make its style different from the including text (so if including is purple => green, if green => purple) Do not included the or in the different style.
+Also review all the commands and instead of the label : always print the full path (relative to .prompts) . EVERY COMMAND !!!!

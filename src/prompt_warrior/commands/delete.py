@@ -11,6 +11,7 @@ from prompt_warrior.core import (
     load_document_for_command,
     remove_task_files,
     resolve_reference,
+    task_display_path,
     write_work_lines,
 )
 from prompt_warrior.errors import PromptWarriorError
@@ -63,4 +64,7 @@ def delete(app_ctx: AppContext, task_ref: str, keep_children: bool) -> None:
         remove_task_files(app_ctx, [document.tasks[index] for index in delete_indices])
 
     write_work_lines(work_path, lines)
-    app_ctx.console.print(f"Deleted task: {task.label}", style="success")
+    app_ctx.console.print(
+        f"Deleted task: [highlight]{task_display_path(task.link_path)}[/highlight]",
+        style="success",
+    )

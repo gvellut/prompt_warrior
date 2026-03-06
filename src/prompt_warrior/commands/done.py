@@ -115,7 +115,8 @@ def print_close_result(
 ) -> None:
     display_path = task_display_path(initial_link_path)
     app_ctx.console.print(
-        f"Marked {closed_count} task(s) as done starting with {display_path}.",
+        f"Marked {closed_count} task(s) as done starting with"
+        f" [highlight]{display_path}[/highlight].",
         style="success",
     )
     level_name = format_level_name(shallowest_depth)
