@@ -4,6 +4,7 @@ import click
 
 from prompt_warrior.cli_params import pass_app_context
 from prompt_warrior.core import (
+    copy_task_content,
     deepest_active_task_index,
     load_document_for_command,
     task_display_path,
@@ -27,6 +28,7 @@ def read(app_ctx: AppContext) -> None:
         raise PromptWarriorError("No active task found to read.")
 
     task = document.tasks[current_task_index]
+    copy_task_content(app_ctx, task)
     app_ctx.console.print(
         "Copied task content from"
         f" [success]{task_display_path(task.link_path)}[/success]",
