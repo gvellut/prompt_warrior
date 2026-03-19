@@ -97,6 +97,7 @@ class WorkDocument:
 class AppContext:
     debug: bool
     prompts_dir: Path
+    full_path: bool
     console: Console
     logger: logging.Logger
     clipboard: ClipboardProvider

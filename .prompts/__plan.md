@@ -21,3 +21,4 @@
 ! [init Task use folder](J_tasks/N_init_Task_use_folder.md)
 ! [Full path of task everywhere](J_tasks/O_Full_path_of_task_everywhere.md)
 ! [Different style for path](J_tasks/Q_Different_style_for_path.md)
+! [Add .prompts to displayed path](J_tasks/R_Add_prompts_to_displayed_path.md)

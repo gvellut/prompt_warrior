@@ -113,7 +113,7 @@ def print_close_result(
     remaining_tasks_in_scope: int,
     initial_link_path: str,
 ) -> None:
-    display_path = task_display_path(initial_link_path)
+    display_path = task_display_path(app_ctx, initial_link_path)
     app_ctx.console.print(
         f"Marked {closed_count} task(s) as done starting with"
         f" [highlight]{display_path}[/highlight].",

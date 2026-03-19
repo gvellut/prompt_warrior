@@ -127,7 +127,8 @@ def next_task(
     write_work_lines(work_path, lines)
 
     app_ctx.console.print(
-        f"Activated task: [highlight]{task_display_path(task.link_path)}[/highlight]",
+        "Activated task:"
+        f" [highlight]{task_display_path(app_ctx, task.link_path)}[/highlight]",
         style="success",
     )
     app_ctx.console.print(

@@ -31,6 +31,6 @@ def read(app_ctx: AppContext) -> None:
     copy_task_content(app_ctx, task)
     app_ctx.console.print(
         "Copied task content from"
-        f" [success]{task_display_path(task.link_path)}[/success]",
+        f" [success]{task_display_path(app_ctx, task.link_path)}[/success]",
         style="highlight",
     )

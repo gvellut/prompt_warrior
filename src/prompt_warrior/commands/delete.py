@@ -65,6 +65,7 @@ def delete(app_ctx: AppContext, task_ref: str, keep_children: bool) -> None:
 
     write_work_lines(work_path, lines)
     app_ctx.console.print(
-        f"Deleted task: [highlight]{task_display_path(task.link_path)}[/highlight]",
+        "Deleted task:"
+        f" [highlight]{task_display_path(app_ctx, task.link_path)}[/highlight]",
         style="success",
     )

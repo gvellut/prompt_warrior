@@ -88,6 +88,7 @@ def init(app_ctx: AppContext, no_init_task: bool, init_task_label: str) -> None:
 
     app_ctx.console.print(f"Initialized workspace at {prompts_dir}", style="success")
     app_ctx.console.print(
-        f"Created initial task: [success]{task_display_path(task_link_path)}[/success]",
+        "Created initial task:"
+        f" [success]{task_display_path(app_ctx, task_link_path)}[/success]",
         style="highlight",
     )

@@ -705,7 +705,9 @@ def insertion_point_for_new_task(
     return len(document.lines), ""
 
 
-def task_display_path(link_path: str) -> str:
+def task_display_path(app_ctx: AppContext, link_path: str) -> str:
+    if app_ctx.full_path:
+        return (app_ctx.prompts_dir / link_path).as_posix()
     return Path(link_path).with_suffix("").as_posix()
 
 

@@ -8,7 +8,13 @@ from rich.console import Console
 
 from .clipboard import select_clipboard_provider
 from .commands import register_commands
-from .constants import DEFAULT_PROMPTS_DIR, PWAR_DEBUG, PWAR_PROMPTS_DIR, RICH_THEME
+from .constants import (
+    DEFAULT_PROMPTS_DIR,
+    PWAR_DEBUG,
+    PWAR_FULL_PATH,
+    PWAR_PROMPTS_DIR,
+    RICH_THEME,
+)
 from .models import AppContext
 
 
@@ -28,8 +34,15 @@ from .models import AppContext
     envvar=PWAR_PROMPTS_DIR,
     help="Directory containing prompts and __plan.md.",
 )
+@click.option(
+    "-f",
+    "--full-path",
+    is_flag=True,
+    envvar=PWAR_FULL_PATH,
+    help="Display task paths with prompts-dir prefix and .md suffix.",
+)
 @click.pass_context
-def cli(ctx: click.Context, debug: bool, prompts_dir: Path) -> None:
+def cli(ctx: click.Context, debug: bool, prompts_dir: Path, full_path: bool) -> None:
     """Prompt Warrior task CLI."""
     console = Console(theme=RICH_THEME)
     logger = logging.getLogger("prompt_warrior")
@@ -48,6 +61,7 @@ def cli(ctx: click.Context, debug: bool, prompts_dir: Path) -> None:
     app_ctx = AppContext(
         debug=debug,
         prompts_dir=prompts_dir,
+        full_path=full_path,
         console=console,
         logger=logger,
         clipboard=select_clipboard_provider(),
