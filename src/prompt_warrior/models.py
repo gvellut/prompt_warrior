@@ -117,6 +117,14 @@ class TaskSignature:
 
 
 @define
+class CloseTaskPlan:
+    task_signatures: list[TaskSignature]
+    shallowest_signature: TaskSignature
+    shallowest_depth: int
+    initial_link_path: str
+
+
+@define
 class CleanToFoldersMove:
     task_index: int
     source_rel_path: Path

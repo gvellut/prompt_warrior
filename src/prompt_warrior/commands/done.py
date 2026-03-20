@@ -20,15 +20,20 @@ from prompt_warrior.core import (
     write_work_lines,
 )
 from prompt_warrior.errors import PromptWarriorError
-from prompt_warrior.models import AppContext, BulletType, TaskSignature, WorkDocument
+from prompt_warrior.models import (
+    AppContext,
+    BulletType,
+    CloseTaskPlan,
+    TaskSignature,
+    WorkDocument,
+)
 from prompt_warrior.rich_error import RichErrorCommand
 
 
-def close_deepest_active_task(
-    work_path: Path,
+def plan_close_deepest_active_task(
     document: WorkDocument,
     recursive: bool,
-) -> tuple[int, int, int, str]:
+) -> CloseTaskPlan:
     current_task_index = deepest_active_task_index(document)
     if current_task_index is None:
         raise PromptWarriorError("No active task found to close.")
@@ -38,15 +43,15 @@ def close_deepest_active_task(
     current_signature = task_signature(current_task)
     shallowest_signature = current_signature
     shallowest_depth = current_task.depth
+    task_signatures: list[TaskSignature] = []
     lines = list(document.lines)
-    closed_count = 0
 
     while True:
-        document = parse_work_lines(work_path, lines)
+        document = parse_work_lines(document.path, lines)
         current_task_index = find_task_by_signature(document, current_signature)
         if current_task_index is None:
             raise PromptWarriorError(
-                "Could not locate the task to close after internal reordering."
+                "Could not locate the task to close while planning recursion."
             )
 
         current_task = document.tasks[current_task_index]
@@ -54,18 +59,19 @@ def close_deepest_active_task(
             shallowest_depth = current_task.depth
             shallowest_signature = task_signature(current_task)
 
+        task_signatures.append(task_signature(current_task))
+
         parent_signature: TaskSignature | None = None
         parent_index = current_task.parent_task_index
         if parent_index is not None:
             parent_signature = task_signature(document.tasks[parent_index])
 
         lines = mark_done_and_move_to_bottom(document, current_task_index)
-        closed_count += 1
 
         if not recursive or parent_signature is None:
             break
 
-        updated_document = parse_work_lines(work_path, lines)
+        updated_document = parse_work_lines(document.path, lines)
         updated_parent_index = find_task_by_signature(
             updated_document, parent_signature
         )
@@ -84,8 +90,37 @@ def close_deepest_active_task(
 
         current_signature = task_signature(parent_task)
 
+    return CloseTaskPlan(
+        task_signatures=task_signatures,
+        shallowest_signature=shallowest_signature,
+        shallowest_depth=shallowest_depth,
+        initial_link_path=initial_link_path,
+    )
+
+
+def close_deepest_active_task(
+    work_path: Path,
+    document: WorkDocument,
+    recursive: bool,
+) -> tuple[int, int, int, str]:
+    close_plan = plan_close_deepest_active_task(document, recursive)
+    lines = list(document.lines)
+    closed_count = len(close_plan.task_signatures)
+
+    for current_signature in close_plan.task_signatures:
+        document = parse_work_lines(work_path, lines)
+        current_task_index = find_task_by_signature(document, current_signature)
+        if current_task_index is None:
+            raise PromptWarriorError(
+                "Could not locate the task to close after internal reordering."
+            )
+
+        lines = mark_done_and_move_to_bottom(document, current_task_index)
+
     updated_document = parse_work_lines(work_path, lines)
-    scope_task_index = find_task_by_signature(updated_document, shallowest_signature)
+    scope_task_index = find_task_by_signature(
+        updated_document, close_plan.shallowest_signature
+    )
     if scope_task_index is None:
         raise PromptWarriorError(
             "Could not locate the closed task scope after internal reordering."
@@ -97,7 +132,12 @@ def close_deepest_active_task(
     )
 
     write_work_lines(work_path, lines)
-    return closed_count, shallowest_depth, remaining_tasks_in_scope, initial_link_path
+    return (
+        closed_count,
+        close_plan.shallowest_depth,
+        remaining_tasks_in_scope,
+        close_plan.initial_link_path,
+    )
 
 
 def format_level_name(depth: int) -> str:

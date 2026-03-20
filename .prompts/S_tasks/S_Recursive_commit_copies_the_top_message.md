@@ -1,0 +1,1 @@
+When doing a commit with -r recursive : Use the  message of the top task (in the levels of the tree) among the closed tasks. Not the lowest

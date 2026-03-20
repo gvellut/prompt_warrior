@@ -19,12 +19,17 @@ from prompt_warrior.errors import PromptWarriorError
 from prompt_warrior.models import AppContext
 from prompt_warrior.rich_error import RichErrorCommand
 
-from .done import close_deepest_active_task, option_recursive, print_close_result
+from .done import (
+    close_deepest_active_task,
+    option_recursive,
+    plan_close_deepest_active_task,
+    print_close_result,
+)
 
 
 @click.command(
     cls=RichErrorCommand,
-    help="Copy a commit command based on the deepest active task label.",
+    help="Copy a commit command based on the active task being committed.",
 )
 @click.option(
     "-c",
@@ -73,8 +78,13 @@ def commit(
         raise PromptWarriorError("No active task found to commit.")
 
     task = document.tasks[current_task_index]
+    task_label = task.label
+    if recursive and not no_done:
+        close_plan = plan_close_deepest_active_task(document, recursive=True)
+        task_label = close_plan.shallowest_signature.label
+
     command_text = build_commit_command(
-        task_label=task.label,
+        task_label=task_label,
         add_all_command=add_all_command,
         commit_command=commit_command,
     )

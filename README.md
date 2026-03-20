@@ -81,7 +81,7 @@ Output:
 - Recursive: level of the shallowest task that was closed
 
 ### `commit`
-Copy a shell command for the deepest active task label to the clipboard.
+Copy a shell command for the active task being committed to the clipboard.
 
 Defaults:
 - Copies `gaa && gcam '<active label>'`
@@ -91,7 +91,7 @@ Options:
 - `-c, --commit-command TEXT`: commit command prefix (default: `gcam`)
 - `-a, --add-all-command TEXT`: add-all command prefix (default: `gaa`)
 - `-n, --no-done`: do not close task(s)
-- `-r, --recursive`: when closing is enabled, also close parent tasks upward when all relevant siblings are done
+- `-r, --recursive`: when closing is enabled, also close parent tasks upward when all relevant siblings are done and use the shallowest closed task label for the commit message
 
 ### `delete TASK_REF`
 Delete a task by reference.
