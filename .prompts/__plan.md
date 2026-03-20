@@ -23,3 +23,4 @@
 ! [Different style for path](J_tasks/Q_Different_style_for_path.md)
 ! [Add .prompts to displayed path](J_tasks/R_Add_prompts_to_displayed_path.md)
 ! [Recursive commit copies the top message](S_tasks/S_Recursive_commit_copies_the_top_message.md)
+! [Quotes for single word labels](S_tasks/T_Quotes_for_single_word_labels.md)

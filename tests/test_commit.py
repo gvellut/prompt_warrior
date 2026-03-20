@@ -40,7 +40,7 @@ class CommitCliTests(unittest.TestCase):
                 result = runner.invoke(cli, ["commit", "--recursive"])
 
             self.assertEqual(result.exit_code, 0, result.output)
-            self.assertEqual(clipboard.copied, ["gaa && gcam Parent"])
+            self.assertEqual(clipboard.copied, ["gaa && gcam 'Parent'"])
             self.assertIn("Marked 2 task(s) as done", result.output)
             self.assertIn("Top level: no remaining relevant task.", result.output)
             self.assertEqual(
@@ -111,6 +111,29 @@ class CommitCliTests(unittest.TestCase):
             self.assertEqual(result.exit_code, 0, result.output)
             self.assertEqual(clipboard.copied, ["gaa && gcam 'Current child'"])
             self.assertEqual(result.output.strip(), "gaa && gcam 'Current child'")
+            self.assertEqual(
+                (prompts_dir / "__plan.md").read_text(encoding="utf-8"),
+                original_plan,
+            )
+
+    def test_non_recursive_commit_always_quotes_single_word_label(self) -> None:
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            prompts_dir = Path(".prompts")
+            prompts_dir.mkdir()
+            original_plan = "* [Initialization](A_tasks/A_initialization.md)\n"
+            (prompts_dir / "__plan.md").write_text(original_plan, encoding="utf-8")
+
+            clipboard = _DummyClipboard()
+            with patch(
+                "prompt_warrior.__main__.select_clipboard_provider",
+                return_value=clipboard,
+            ):
+                result = runner.invoke(cli, ["commit", "--no-done"])
+
+            self.assertEqual(result.exit_code, 0, result.output)
+            self.assertEqual(clipboard.copied, ["gaa && gcam 'Initialization'"])
+            self.assertEqual(result.output.strip(), "gaa && gcam 'Initialization'")
             self.assertEqual(
                 (prompts_dir / "__plan.md").read_text(encoding="utf-8"),
                 original_plan,

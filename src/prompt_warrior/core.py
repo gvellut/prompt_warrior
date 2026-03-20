@@ -4,7 +4,6 @@ from collections.abc import Iterator
 from functools import lru_cache
 from pathlib import Path
 import re
-import shlex
 import string
 import unicodedata
 
@@ -771,9 +770,16 @@ def build_commit_command(
     if normalized_add_all:
         command_parts.append(normalized_add_all)
     if normalized_commit:
-        command_parts.append(f"{normalized_commit} {shlex.quote(task_label)}")
+        command_parts.append(
+            f"{normalized_commit} {_always_single_quote_shell(task_label)}"
+        )
 
     return " && ".join(command_parts)
+
+
+def _always_single_quote_shell(value: str) -> str:
+    escaped_value = value.replace("'", "'\"'\"'")
+    return f"'{escaped_value}'"
 
 
 def delete_task_block(document: WorkDocument, task_index: int) -> list[str]:
