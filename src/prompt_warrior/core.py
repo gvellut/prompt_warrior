@@ -448,6 +448,24 @@ def standard_prefix_order(prefix: str | None) -> int | None:
     return _prefix_order_lookup()[prefix]
 
 
+def next_standard_prefix(prefix: str | None) -> str:
+    if prefix is None:
+        return next(iter_prefix_candidates())
+
+    current_order = standard_prefix_order(prefix)
+    if current_order is None:
+        raise PromptWarriorError(f"Unsupported task prefix for increment: '{prefix}'.")
+
+    for candidate in iter_prefix_candidates():
+        candidate_order = standard_prefix_order(candidate)
+        if candidate_order is not None and candidate_order > current_order:
+            return candidate
+
+    raise PromptWarriorError(
+        "No available task prefix left in the configured sequence."
+    )
+
+
 def choose_unused_prefix(used_prefixes: set[str]) -> str:
     for candidate in iter_prefix_candidates():
         if candidate not in used_prefixes:
@@ -455,6 +473,20 @@ def choose_unused_prefix(used_prefixes: set[str]) -> str:
     raise PromptWarriorError(
         "No available task prefix left in the configured sequence."
     )
+
+
+def choose_next_prefix_after_last(used_prefixes: set[str]) -> str:
+    last_prefix: str | None = None
+    last_order: int | None = None
+    for prefix in used_prefixes:
+        prefix_order = standard_prefix_order(prefix)
+        if prefix_order is None:
+            continue
+        if last_order is None or prefix_order > last_order:
+            last_prefix = prefix
+            last_order = prefix_order
+
+    return next_standard_prefix(last_prefix)
 
 
 def compose_stem(prefix: str, label_component: str) -> str:
@@ -475,7 +507,7 @@ def choose_task_stem(
         }
 
         while True:
-            prefix = choose_unused_prefix(used_prefixes)
+            prefix = choose_next_prefix_after_last(used_prefixes)
             stem = compose_stem(prefix, label_component)
             if not (app_ctx.prompts_dir / f"{stem}{MARKDOWN_EXTENSION}").exists():
                 return stem
@@ -496,7 +528,7 @@ def choose_task_stem(
             used_child_locals.add(child_prefix[len(expected_prefix) :])
 
     while True:
-        local_prefix = choose_unused_prefix(used_child_locals)
+        local_prefix = choose_next_prefix_after_last(used_child_locals)
         full_prefix = f"{parent_prefix}.{local_prefix}"
         stem = compose_stem(full_prefix, label_component)
         if not (app_ctx.prompts_dir / f"{stem}{MARKDOWN_EXTENSION}").exists():
