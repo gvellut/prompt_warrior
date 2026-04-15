@@ -10,6 +10,7 @@ from prompt_warrior.constants import PWAR_RECURSIVE
 from prompt_warrior.core import (
     deepest_active_task_index,
     find_task_by_signature,
+    format_level_name,
     load_document_for_command,
     mark_done_and_move_to_bottom,
     parse_work_lines,
@@ -138,12 +139,6 @@ def close_deepest_active_task(
         remaining_tasks_in_scope,
         close_plan.initial_link_path,
     )
-
-
-def format_level_name(depth: int) -> str:
-    if depth == 0:
-        return "Top level"
-    return f"Sublevel {depth}"
 
 
 def print_close_result(

@@ -18,6 +18,7 @@ from prompt_warrior.core import (
     child_task_indices,
     copy_task_content,
     deepest_active_task_index,
+    format_level_name,
     load_document_for_command,
     render_task_line,
     task_display_path,
@@ -85,8 +86,17 @@ def next_task(
         if document.tasks[index].bullet == BulletType.ACTIVE
     ]
     if scope_active:
+        active_task_index = deepest_active_task_index(document)
+        if active_task_index is None:
+            raise PromptWarriorError(
+                "There is already an active task. Run `pwr done` first."
+            )
+        active_task = document.tasks[active_task_index]
         raise PromptWarriorError(
-            "There is already an active task at this level. Run `pwr done` first."
+            "There is already an active task. Run `pwr done` first.\n"
+            f"Active task: {active_task.label}\n"
+            f"Level: {format_level_name(active_task.depth)}\n"
+            f"Path: {task_display_path(app_ctx, active_task.link_path)}"
         )
 
     next_candidate = builtins.next(

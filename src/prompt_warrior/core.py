@@ -243,6 +243,12 @@ def child_task_indices(document: WorkDocument, parent_index: int | None) -> list
     return list(document.tasks[parent_index].child_task_indices)
 
 
+def format_level_name(depth: int) -> str:
+    if depth == 0:
+        return "Top level"
+    return f"Sublevel {depth}"
+
+
 def block_end_line_index(document: WorkDocument, task_index: int) -> int:
     task = document.tasks[task_index]
     for candidate in document.tasks:

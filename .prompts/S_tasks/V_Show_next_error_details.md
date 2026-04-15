@@ -1,0 +1,3 @@
+When doing pwr next and there is already an active task : do no simply display that it is not possible because active.
+Also display the title of the active task (that appears in the plan.md) and the path to the active prompt file. If there are multiple active prompts (because subtasks) : just display a single one : the deepest one (+ display the level : top, then number ;  if already displayed somewhere follow what is done)
+Also if Full Path is active, make the display of the path respect that.
