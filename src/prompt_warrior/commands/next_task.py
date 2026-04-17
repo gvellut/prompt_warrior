@@ -4,6 +4,7 @@ import builtins
 import time
 
 import click
+from rich.console import Group
 from rich.text import Text
 
 from prompt_warrior.cli_params import pass_app_context
@@ -92,12 +93,7 @@ def next_task(
                 "There is already an active task. Run `pwr done` first."
             )
         active_task = document.tasks[active_task_index]
-        raise PromptWarriorError(
-            "There is already an active task. Run `pwr done` first.\n"
-            f"Active task: {active_task.label}\n"
-            f"Level: {format_level_name(active_task.depth)}\n"
-            f"Path: {task_display_path(app_ctx, active_task.link_path)}"
-        )
+        raise build_active_task_error(app_ctx, active_task)
 
     next_candidate = builtins.next(
         (
@@ -147,3 +143,30 @@ def next_task(
     )
     if branch_line is not None:
         app_ctx.console.print(branch_line)
+
+
+def build_active_task_error(app_ctx: AppContext, task) -> PromptWarriorError:
+    lines = build_active_task_error_lines(app_ctx, task)
+    return PromptWarriorError(
+        "\n".join(line.plain for line in lines),
+        renderable=Group(*lines),
+    )
+
+
+def build_active_task_error_lines(app_ctx: AppContext, task) -> tuple[Text, ...]:
+    error_line = Text("There is already an active task. Run `pwr done` first.")
+    error_line.stylize("error")
+
+    active_line = Text.assemble(
+        ("Active task: ", "success"),
+        (task.label, "highlight"),
+    )
+    level_line = Text.assemble(
+        ("Level: ", "success"),
+        (format_level_name(task.depth), "highlight"),
+    )
+    path_line = Text.assemble(
+        ("Path: ", "success"),
+        (task_display_path(app_ctx, task.link_path), "highlight"),
+    )
+    return (error_line, active_line, level_line, path_line)

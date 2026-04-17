@@ -59,6 +59,16 @@ Options:
 - `--branch-command TEXT`: command prefix for the branch command (default `gsw -c`)
 - `--branch-copy-interval INTEGER`: delay before branch-command clipboard copy in 100ms units (default `6`)
 
+### `current`
+Display the deepest active task and its current context.
+
+Output:
+- Prints the active task title
+- Prints the active task display path
+- Prints the current scope as `Top level` or `Sublevel N` with either `No other remaining task.` or `<N> remaining task(s) after current.`
+- For sublevels, also prints the task hierarchy from the current task up to the root
+- Marks the hierarchy leaf as `(correction)` for active correction tasks
+
 ### `read`
 Copy the deepest active task content to the clipboard without changing task status.
 

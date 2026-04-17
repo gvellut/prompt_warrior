@@ -4,6 +4,7 @@ import click
 from rich.console import Console
 
 from .constants import RICH_THEME
+from .errors import PromptWarriorError
 from .models import AppContext
 
 
@@ -29,7 +30,10 @@ class RichErrorCommand(click.Command):
                 message = str(exc) if str(exc) else exc.__class__.__name__
                 exit_code = 1
 
-            console.print(message, style="error")
+            if isinstance(exc, PromptWarriorError) and exc.renderable is not None:
+                console.print(exc.renderable)
+            else:
+                console.print(message, style="error")
             if debug:
                 console.print_exception()
 
