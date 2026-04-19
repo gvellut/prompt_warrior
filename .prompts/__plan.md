@@ -1,5 +1,3 @@
-* [current command](S_tasks/W_current_command.md)
-    *? [test](S_tasks/W.A_test.md)
 ! [Change some details](A_tasks/A_details.md)
 ! [More details](A_tasks/B_More_details.md)
 ! [Sub correct](A_tasks/C_Sub_correct.md)
@@ -28,3 +26,6 @@
 ! [Quotes for single word labels](S_tasks/T_Quotes_for_single_word_labels.md)
 ! [Next task code use the one after the last no hole](S_tasks/U_Next_task_code_use_the_one_after_the_last_no_hol.md)
 ! [Show next error details](S_tasks/V_Show_next_error_details.md)
+! [current command](S_tasks/W_current_command.md)
+    !? [test](S_tasks/W.A_test.md)
+! [commit](S_tasks/X_commit.md)

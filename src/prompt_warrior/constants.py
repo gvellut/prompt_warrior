@@ -47,6 +47,7 @@ RICH_THEME = Theme(
         "warning": "yellow",
         "error": "red",
         "highlight": "magenta",
+        "label_highlight": "cyan",
         "important": "bold",
     }
 )

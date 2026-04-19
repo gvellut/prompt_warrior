@@ -19,5 +19,8 @@ Always run `ruff format` at the end before returning to the user.
 
 ## Python
 
+uv project
+Python 3.14
+pytest for the tests
 Use relative imports for the same module or below ie with a single '.'. Never use '..' : Always use the absolute import then.
 Do not use dataclasses. Always use attrs and @define.

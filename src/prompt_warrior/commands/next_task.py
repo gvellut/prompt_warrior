@@ -30,6 +30,15 @@ from prompt_warrior.models import ACTIONABLE_BULLETS, AppContext, BulletType
 from prompt_warrior.rich_error import RichErrorCommand
 
 
+def build_activated_task_line(app_ctx: AppContext, task) -> Text:
+    return Text.assemble(
+        ("Activated task: ", "success"),
+        (f"'{task.label}'", "label_highlight"),
+        (" ", "success"),
+        (task_display_path(app_ctx, task.link_path), "highlight"),
+    )
+
+
 @click.command(
     name="next",
     cls=RichErrorCommand,
@@ -132,11 +141,7 @@ def next_task(
     lines[task.line_index] = render_task_line(task, bullet=BulletType.ACTIVE)
     write_work_lines(work_path, lines)
 
-    app_ctx.console.print(
-        "Activated task:"
-        f" [highlight]{task_display_path(app_ctx, task.link_path)}[/highlight]",
-        style="success",
-    )
+    app_ctx.console.print(build_activated_task_line(app_ctx, task))
     app_ctx.console.print(
         "Copied task content.",
         style="highlight",

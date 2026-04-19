@@ -121,6 +121,7 @@ class CloseTaskPlan:
     task_signatures: list[TaskSignature]
     shallowest_signature: TaskSignature
     shallowest_depth: int
+    initial_label: str
     initial_link_path: str
 
 

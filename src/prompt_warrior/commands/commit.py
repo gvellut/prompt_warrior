@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import click
+from rich.text import Text
 
 from prompt_warrior.cli_params import pass_app_context
 from prompt_warrior.constants import (
@@ -25,6 +26,13 @@ from .done import (
     plan_close_deepest_active_task,
     print_close_result,
 )
+
+
+def build_commit_copied_line(command_text: str) -> Text:
+    return Text.assemble(
+        (command_text, "highlight"),
+        (" copied to clipboard", "success"),
+    )
 
 
 @click.command(
@@ -89,22 +97,27 @@ def commit(
         commit_command=commit_command,
     )
     app_ctx.clipboard.copy(command_text)
-    app_ctx.console.print(command_text, style="highlight")
+    app_ctx.console.print(build_commit_copied_line(command_text))
 
     if no_done:
         return
 
-    closed_count, shallowest_depth, remaining_tasks_in_scope, initial_link_path = (
-        close_deepest_active_task(
-            work_path=work_path,
-            document=document,
-            recursive=recursive,
-        )
+    (
+        closed_count,
+        shallowest_depth,
+        remaining_tasks_in_scope,
+        initial_label,
+        initial_link_path,
+    ) = close_deepest_active_task(
+        work_path=work_path,
+        document=document,
+        recursive=recursive,
     )
     print_close_result(
         app_ctx,
         closed_count,
         shallowest_depth,
         remaining_tasks_in_scope,
+        initial_label,
         initial_link_path,
     )

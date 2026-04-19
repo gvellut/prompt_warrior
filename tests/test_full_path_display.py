@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-import unittest
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -32,101 +31,97 @@ def _build_app_context(prompts_dir: str, full_path: bool) -> AppContext:
     )
 
 
-class TaskDisplayPathTests(unittest.TestCase):
-    def test_default_display_path_strips_markdown_suffix(self) -> None:
-        app_ctx = _build_app_context(".prompts", full_path=False)
+def test_default_display_path_strips_markdown_suffix() -> None:
+    app_ctx = _build_app_context(".prompts", full_path=False)
 
-        display_path = task_display_path(app_ctx, "J_tasks/R_task.md")
+    display_path = task_display_path(app_ctx, "J_tasks/R_task.md")
 
-        self.assertEqual(display_path, "J_tasks/R_task")
-
-    def test_full_path_display_uses_default_prompts_dir_and_keeps_suffix(self) -> None:
-        app_ctx = _build_app_context(".prompts", full_path=True)
-
-        display_path = task_display_path(app_ctx, "J_tasks/R_task.md")
-
-        self.assertEqual(display_path, ".prompts/J_tasks/R_task.md")
-
-    def test_full_path_display_uses_custom_prompts_dir(self) -> None:
-        app_ctx = _build_app_context("custom-prompts", full_path=True)
-
-        display_path = task_display_path(app_ctx, "J_tasks/R_task.md")
-
-        self.assertEqual(display_path, "custom-prompts/J_tasks/R_task.md")
+    assert display_path == "J_tasks/R_task"
 
 
-class FullPathCliTests(unittest.TestCase):
-    def test_init_full_path_prints_prefixed_markdown_path(self) -> None:
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            with patch(
-                "prompt_warrior.__main__.select_clipboard_provider",
-                return_value=_DummyClipboard(),
-            ):
-                result = runner.invoke(cli, ["--full-path", "init"])
+def test_full_path_display_uses_default_prompts_dir_and_keeps_suffix() -> None:
+    app_ctx = _build_app_context(".prompts", full_path=True)
 
-            self.assertEqual(result.exit_code, 0, result.output)
-            self.assertIn("Created initial task: .prompts/", result.output)
-            self.assertIn(".md", result.output)
+    display_path = task_display_path(app_ctx, "J_tasks/R_task.md")
 
-            work_text = Path(".prompts/__plan.md").read_text(encoding="utf-8")
-            self.assertIn("](", work_text)
-            self.assertNotIn("(.prompts/", work_text)
+    assert display_path == ".prompts/J_tasks/R_task.md"
 
-    def test_add_full_path_prints_prefixed_markdown_path_without_changing_link(
-        self,
-    ) -> None:
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            prompts_dir = Path(".prompts")
-            prompts_dir.mkdir()
-            (prompts_dir / "__plan.md").write_text("", encoding="utf-8")
 
-            with patch(
-                "prompt_warrior.__main__.select_clipboard_provider",
-                return_value=_DummyClipboard(),
-            ):
-                result = runner.invoke(cli, ["--full-path", "add", "Add", "path"])
+def test_full_path_display_uses_custom_prompts_dir() -> None:
+    app_ctx = _build_app_context("custom-prompts", full_path=True)
 
-            self.assertEqual(result.exit_code, 0, result.output)
-            self.assertIn("Added task: .prompts/", result.output)
-            self.assertIn(".md", result.output)
+    display_path = task_display_path(app_ctx, "J_tasks/R_task.md")
 
-            work_text = (prompts_dir / "__plan.md").read_text(encoding="utf-8")
-            self.assertIn("](", work_text)
-            self.assertNotIn("(.prompts/", work_text)
+    assert display_path == "custom-prompts/J_tasks/R_task.md"
 
-    def test_read_full_path_uses_env_overrides_for_prompts_dir_and_flag(self) -> None:
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            prompts_dir = Path("custom-prompts")
-            task_rel_path = Path("J_tasks/R_current.md")
-            (prompts_dir / task_rel_path.parent).mkdir(parents=True)
-            (prompts_dir / "__plan.md").write_text(
-                "* [Current](J_tasks/R_current.md)\n",
-                encoding="utf-8",
-            )
-            (prompts_dir / task_rel_path).write_text("current task", encoding="utf-8")
 
-            with patch(
-                "prompt_warrior.__main__.select_clipboard_provider",
-                return_value=_DummyClipboard(),
-            ):
-                result = runner.invoke(
-                    cli,
-                    ["read"],
-                    env={
-                        "PWAR_FULL_PATH": "1",
-                        "PWAR_PROMPTS_DIR": "custom-prompts",
-                    },
-                )
+def test_init_full_path_prints_prefixed_markdown_path() -> None:
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with patch(
+            "prompt_warrior.__main__.select_clipboard_provider",
+            return_value=_DummyClipboard(),
+        ):
+            result = runner.invoke(cli, ["--full-path", "init"])
 
-            self.assertEqual(result.exit_code, 0, result.output)
-            self.assertIn(
-                "Copied task content from custom-prompts/J_tasks/R_current.md",
-                result.output,
+        assert result.exit_code == 0, result.output
+        assert "Created initial task: .prompts/" in result.output
+        assert ".md" in result.output
+
+        work_text = Path(".prompts/__plan.md").read_text(encoding="utf-8")
+        assert "](" in work_text
+        assert "(.prompts/" not in work_text
+
+
+def test_add_full_path_prints_prefixed_markdown_path_without_changing_link() -> None:
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        prompts_dir = Path(".prompts")
+        prompts_dir.mkdir()
+        (prompts_dir / "__plan.md").write_text("", encoding="utf-8")
+
+        with patch(
+            "prompt_warrior.__main__.select_clipboard_provider",
+            return_value=_DummyClipboard(),
+        ):
+            result = runner.invoke(cli, ["--full-path", "add", "Add", "path"])
+
+        assert result.exit_code == 0, result.output
+        assert "Added task: .prompts/" in result.output
+        assert ".md" in result.output
+
+        work_text = (prompts_dir / "__plan.md").read_text(encoding="utf-8")
+        assert "](" in work_text
+        assert "(.prompts/" not in work_text
+
+
+def test_read_full_path_uses_env_overrides_for_prompts_dir_and_flag() -> None:
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        prompts_dir = Path("custom-prompts")
+        task_rel_path = Path("J_tasks/R_current.md")
+        (prompts_dir / task_rel_path.parent).mkdir(parents=True)
+        (prompts_dir / "__plan.md").write_text(
+            "* [Current](J_tasks/R_current.md)\n",
+            encoding="utf-8",
+        )
+        (prompts_dir / task_rel_path).write_text("current task", encoding="utf-8")
+
+        with patch(
+            "prompt_warrior.__main__.select_clipboard_provider",
+            return_value=_DummyClipboard(),
+        ):
+            result = runner.invoke(
+                cli,
+                ["read"],
+                env={
+                    "PWAR_FULL_PATH": "1",
+                    "PWAR_PROMPTS_DIR": "custom-prompts",
+                },
             )
 
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code == 0, result.output
+        assert (
+            "Copied task content from custom-prompts/J_tasks/R_current.md"
+            in result.output
+        )

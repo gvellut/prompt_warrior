@@ -4,6 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import click
+from rich.text import Text
 
 from prompt_warrior.cli_params import pass_app_context
 from prompt_warrior.constants import PWAR_RECURSIVE
@@ -40,6 +41,7 @@ def plan_close_deepest_active_task(
         raise PromptWarriorError("No active task found to close.")
 
     current_task = document.tasks[current_task_index]
+    initial_label = current_task.label
     initial_link_path = current_task.link_path
     current_signature = task_signature(current_task)
     shallowest_signature = current_signature
@@ -95,6 +97,7 @@ def plan_close_deepest_active_task(
         task_signatures=task_signatures,
         shallowest_signature=shallowest_signature,
         shallowest_depth=shallowest_depth,
+        initial_label=initial_label,
         initial_link_path=initial_link_path,
     )
 
@@ -103,7 +106,7 @@ def close_deepest_active_task(
     work_path: Path,
     document: WorkDocument,
     recursive: bool,
-) -> tuple[int, int, int, str]:
+) -> tuple[int, int, int, str, str]:
     close_plan = plan_close_deepest_active_task(document, recursive)
     lines = list(document.lines)
     closed_count = len(close_plan.task_signatures)
@@ -137,7 +140,24 @@ def close_deepest_active_task(
         closed_count,
         close_plan.shallowest_depth,
         remaining_tasks_in_scope,
+        close_plan.initial_label,
         close_plan.initial_link_path,
+    )
+
+
+def build_close_result_line(
+    app_ctx: AppContext,
+    closed_count: int,
+    initial_label: str,
+    initial_link_path: str,
+) -> Text:
+    display_path = task_display_path(app_ctx, initial_link_path)
+    return Text.assemble(
+        (f"Marked {closed_count} task(s) as done starting with ", "success"),
+        (f"'{initial_label}'", "label_highlight"),
+        (" ", "success"),
+        (display_path, "highlight"),
+        (".", "success"),
     )
 
 
@@ -146,13 +166,16 @@ def print_close_result(
     closed_count: int,
     shallowest_depth: int,
     remaining_tasks_in_scope: int,
+    initial_label: str,
     initial_link_path: str,
 ) -> None:
-    display_path = task_display_path(app_ctx, initial_link_path)
     app_ctx.console.print(
-        f"Marked {closed_count} task(s) as done starting with"
-        f" [highlight]{display_path}[/highlight].",
-        style="success",
+        build_close_result_line(
+            app_ctx,
+            closed_count=closed_count,
+            initial_label=initial_label,
+            initial_link_path=initial_link_path,
+        )
     )
     level_name = format_level_name(shallowest_depth)
     if remaining_tasks_in_scope == 0:
@@ -191,17 +214,22 @@ def option_recursive(function: Callable[..., object]) -> Callable[..., object]:
 def done(app_ctx: AppContext, recursive: bool) -> None:
     app_ctx.logger.debug("Running done with recursive=%s", recursive)
     work_path, document = load_document_for_command(app_ctx)
-    closed_count, shallowest_depth, remaining_tasks_in_scope, initial_link_path = (
-        close_deepest_active_task(
-            work_path=work_path,
-            document=document,
-            recursive=recursive,
-        )
+    (
+        closed_count,
+        shallowest_depth,
+        remaining_tasks_in_scope,
+        initial_label,
+        initial_link_path,
+    ) = close_deepest_active_task(
+        work_path=work_path,
+        document=document,
+        recursive=recursive,
     )
     print_close_result(
         app_ctx,
         closed_count,
         shallowest_depth,
         remaining_tasks_in_scope,
+        initial_label,
         initial_link_path,
     )

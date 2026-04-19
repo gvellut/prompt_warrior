@@ -7,6 +7,9 @@ authors = [{ name = "Guilhem Vellut", email = "guilhem.vellut@gmail.com" }]
 requires-python = ">=3.14"
 dependencies = ["attrs>=25.4.0", "click>=8.3.1", "rich>=14.3.2"]
 
+[dependency-groups]
+dev = ["pytest>=8.4.2"]
+
 [project.scripts]
 prompt-warrior = "prompt_warrior.__main__:cli"
 
